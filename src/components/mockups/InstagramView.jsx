@@ -1,13 +1,124 @@
 import React from 'react';
-import { ChevronLeft, Phone, Video, Info, Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from 'lucide-react';
+import {
+  ChevronLeft,
+  Phone,
+  Video,
+  Info,
+  Heart,
+  MessageCircle,
+  Send,
+  Bookmark,
+  MoreHorizontal,
+  Music,
+  HelpCircle,
+  Star
+} from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 
-export default function InstagramView({ slide, isPost = false }) {
+export default function InstagramView({ slide, isPost = false, isStory = false }) {
   const { project, getCharacter } = useProject();
   const content = slide.content || {};
   const theme = slide.customSettings?.theme || project.globalSettings.theme || 'dark';
 
-  // Instagram Feed Post Mode
+  // 1. INSTAGRAM STORY MODE
+  if (isStory) {
+    const author = getCharacter(content.authorId);
+    const bgUrl = content.backgroundUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80";
+    const music = content.musicSticker || {};
+    const question = content.questionSticker || {};
+
+    return (
+      <div
+        className="ig-story-wrapper"
+        style={{ backgroundImage: `url(${bgUrl})` }}
+      >
+        <div className="ig-story-overlay" />
+
+        <div className="ig-story-content">
+          {/* Top Story Header */}
+          <div>
+            {/* Story Progress Segments */}
+            <div className="ig-story-progress-bar">
+              <div className="ig-story-progress-segment active" />
+              <div className="ig-story-progress-segment" />
+              <div className="ig-story-progress-segment" />
+            </div>
+
+            <div className="ig-story-header">
+              <div className="ig-story-author-box">
+                <img src={author.avatar} alt="" className="ig-story-author-avatar" />
+                <span className="ig-story-author-name">{author.handle.replace('@', '')}</span>
+                <span className="ig-story-time">14m</span>
+              </div>
+
+              {content.isCloseFriends && (
+                <div className="ig-story-close-friends-badge">
+                  <Star size={11} fill="white" />
+                  <span>Teman Dekat</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Center Story Stickers (Music & Question Box) */}
+          <div className="ig-story-stickers-container">
+            {/* Music Sticker */}
+            {music.song && (
+              <div className="ig-music-sticker">
+                <img
+                  src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=100&q=80"
+                  alt=""
+                  className="ig-music-album-art"
+                />
+                <div className="ig-music-details">
+                  <span className="ig-music-title">{music.song}</span>
+                  <span className="ig-music-artist">{music.artist || 'Artist'}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Question Sticker */}
+            {question.enabled && (
+              <div className="ig-question-box">
+                <div className="ig-question-header">
+                  {question.prompt || "Tanya aku apa aja..."}
+                </div>
+                <div className="ig-question-input-mock">
+                  Ketik jawaban kamu di sini...
+                </div>
+              </div>
+            )}
+
+            {/* Story Caption */}
+            {content.caption && (
+              <div style={{
+                background: 'rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(10px)',
+                padding: '6px 14px',
+                borderRadius: '16px',
+                fontSize: '14px',
+                fontWeight: 600,
+                textAlign: 'center'
+              }}>
+                {content.caption}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Story Reply Bar */}
+          <div className="ig-story-reply-bar">
+            <div className="ig-story-reply-pill">
+              <span>Kirim pesan...</span>
+            </div>
+            <Heart size={24} fill="none" color="white" />
+            <Send size={22} color="white" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. INSTAGRAM FEED POST MODE
   if (isPost) {
     const author = getCharacter(content.authorId);
     return (
@@ -55,7 +166,7 @@ export default function InstagramView({ slide, isPost = false }) {
     );
   }
 
-  // Instagram DM Mode
+  // 3. INSTAGRAM DM MODE
   const targetChar = getCharacter(content.targetCharacterId);
   const messages = content.messages || [];
 
@@ -65,7 +176,10 @@ export default function InstagramView({ slide, isPost = false }) {
       <div className="ig-header">
         <div className="ig-header-user">
           <ChevronLeft size={24} />
-          <img src={targetChar.avatar} alt={targetChar.name} className="ig-header-avatar" />
+          <div className="ig-header-avatar-box">
+            <img src={targetChar.avatar} alt={targetChar.name} className="ig-header-avatar" />
+            <div className="ig-active-dot" title="Aktif sekarang" />
+          </div>
           <div className="ig-header-title-box">
             <span className="ig-header-name">{targetChar.name}</span>
             <span className="ig-header-handle">{targetChar.handle}</span>

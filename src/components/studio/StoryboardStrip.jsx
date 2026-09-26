@@ -55,6 +55,8 @@ export default function StoryboardStrip() {
       case 'ig_dm':
       case 'ig_post':
         return <InstagramIcon size={20} color="#e1306c" />;
+      case 'ig_story':
+        return <InstagramIcon size={20} color="#10b981" />;
       case 'lockscreen':
         return <Lock size={18} color="#60a5fa" />;
       default:
@@ -70,6 +72,7 @@ export default function StoryboardStrip() {
       case 'x_dm': return 'DM 𝕏';
       case 'ig_dm': return 'IG DM';
       case 'ig_post': return 'IG POST';
+      case 'ig_story': return 'STORY';
       case 'lockscreen': return 'LOCK';
       default: return 'SLIDE';
     }
@@ -220,6 +223,15 @@ export default function StoryboardStrip() {
               >
                 <InstagramIcon size={16} color="#f77737" />
                 <span>Instagram Post</span>
+              </button>
+
+              <button
+                className="canvas-toolbar-btn"
+                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
+                onClick={() => { addSlide('ig_story'); setMenuOpen(false); }}
+              >
+                <InstagramIcon size={16} color="#10b981" />
+                <span>Instagram Story</span>
               </button>
 
               <button

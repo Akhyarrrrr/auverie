@@ -1,22 +1,48 @@
-/* Phone Bezel & Container Styling */
+/* Phone Bezel, Models, & Realistic Reflections */
 .phone-mockup-outer {
   width: 380px;
   height: 800px;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 210px);
   aspect-ratio: 9 / 19;
   position: relative;
-  background: #111318;
-  border-radius: 52px;
+  background: var(--bezel-color, #28292b);
+  border-radius: var(--bezel-radius, 52px);
   padding: 10px;
   box-shadow: 
     0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 0 0 4px #2b303c,
+    0 0 0 4px rgba(0, 0, 0, 0.4),
     0 25px 60px -15px rgba(0, 0, 0, 0.8),
     0 0 50px rgba(99, 102, 241, 0.12);
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s ease, width 0.2s ease, height 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+}
+
+/* Frameless Mode (Pure Screen Canvas) */
+.phone-mockup-outer.model-frameless {
+  padding: 0;
+  background: transparent;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  border-radius: 0;
+}
+
+.phone-mockup-outer.model-frameless .phone-screen-inner {
+  border-radius: 0;
+}
+
+.phone-mockup-outer.model-frameless::before {
+  display: none;
+}
+
+/* Samsung S24 Ultra Sharp Boxy Look */
+.phone-mockup-outer.model-samsung-s24-ultra {
+  border-radius: 22px;
+  padding: 8px;
+}
+
+.phone-mockup-outer.model-samsung-s24-ultra .phone-screen-inner {
+  border-radius: 14px;
 }
 
 /* Glass reflection shine on screen border */
@@ -27,10 +53,55 @@
   left: 10px;
   right: 10px;
   bottom: 10px;
-  border-radius: 44px;
+  border-radius: calc(var(--bezel-radius, 52px) - 8px);
   pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 40;
+}
+
+/* Physical Hardware Buttons Subtle Silhouettes */
+.phone-button-action {
+  position: absolute;
+  left: -4px;
+  top: 110px;
+  width: 4px;
+  height: 28px;
+  background: var(--bezel-color, #28292b);
+  border-radius: 3px 0 0 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.phone-button-volume-up {
+  position: absolute;
+  left: -4px;
+  top: 155px;
+  width: 4px;
+  height: 48px;
+  background: var(--bezel-color, #28292b);
+  border-radius: 3px 0 0 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.phone-button-volume-down {
+  position: absolute;
+  left: -4px;
+  top: 215px;
+  width: 4px;
+  height: 48px;
+  background: var(--bezel-color, #28292b);
+  border-radius: 3px 0 0 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.phone-button-power {
+  position: absolute;
+  right: -4px;
+  top: 170px;
+  width: 4px;
+  height: 72px;
+  background: var(--bezel-color, #28292b);
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Inner Screen Viewport - Target of html-to-image export */
@@ -39,14 +110,14 @@
   width: 100%;
   height: 100%;
   background: #000000;
-  border-radius: 42px;
+  border-radius: var(--screen-radius, 44px);
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
 }
 
-/* Phone Status Bar (iOS Style) */
+/* Phone Status Bar */
 .phone-status-bar {
   height: 48px;
   min-height: 48px;
@@ -74,13 +145,13 @@
   letter-spacing: -0.02em;
 }
 
-/* Dynamic Island */
+/* Dynamic Island (iPhone 15 / 16 Pro) */
 .dynamic-island {
   position: absolute;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 110px;
+  width: 112px;
   height: 30px;
   background: #000000;
   border-radius: 20px;
@@ -89,6 +160,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
 }
 
 .island-camera-lens {
@@ -104,6 +176,44 @@
   height: 8px;
   border-radius: 50%;
   background: #0f1524;
+}
+
+/* Classic iPhone Notch (iPhone 14 / 13) */
+.classic-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 30px;
+  background: #000000;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notch-speaker {
+  width: 48px;
+  height: 4px;
+  background: #1c1c1e;
+  border-radius: 4px;
+}
+
+/* Samsung / Android Centered Punch Hole Camera */
+.punch-hole-center {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: #000000;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 60;
 }
 
 /* Status Bar Icons (Right) */
@@ -141,7 +251,7 @@
 }
 
 .battery-pill {
-  width: 23px;
+  width: 24px;
   height: 11.5px;
   border: 1px solid currentColor;
   border-radius: 3.5px;
@@ -154,12 +264,12 @@
 .battery-pill::after {
   content: '';
   position: absolute;
-  right: -3px;
+  right: -3.5px;
   top: 3px;
-  width: 1.5px;
+  width: 2px;
   height: 4px;
   background: currentColor;
-  border-radius: 0 1px 1px 0;
+  border-radius: 0 1.5px 1.5px 0;
 }
 
 .battery-fill {

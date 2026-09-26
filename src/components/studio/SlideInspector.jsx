@@ -9,9 +9,16 @@ import {
   MessageCircle,
   Clock,
   Sparkles,
-  Heart
+  Heart,
+  Music,
+  HelpCircle,
+  Star,
+  Quote,
+  BarChart2,
+  Ban
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import AssetPickerModal from './AssetPickerModal';
 
 export default function SlideInspector() {
   const {
@@ -23,12 +30,15 @@ export default function SlideInspector() {
     deleteSlide
   } = useProject();
 
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [assetTargetField, setAssetTargetField] = useState('wallpaperUrl');
+
   if (!activeSlide) {
     return (
       <aside className="inspector-panel">
         <div className="inspector-header">Inspector</div>
         <div className="sidebar-content" style={{ color: 'var(--text-muted)' }}>
-          Pilih slide untuk mulai mengedit.
+          Pilih slide di bawah untuk mulai mengedit.
         </div>
       </aside>
     );
@@ -43,7 +53,8 @@ export default function SlideInspector() {
       senderId: 'me',
       text: 'Pesan baru...',
       time: project.globalSettings.time || '23:45',
-      status: 'read'
+      status: 'read',
+      hasTail: true
     };
     updateSlideContent(activeSlide.id, (prev) => ({
       ...prev,
@@ -98,6 +109,11 @@ export default function SlideInspector() {
     }));
   };
 
+  const openWallpaperPicker = (field = 'wallpaperUrl') => {
+    setAssetTargetField(field);
+    setAssetPickerOpen(true);
+  };
+
   return (
     <aside className="inspector-panel">
       {/* Header */}
@@ -126,7 +142,7 @@ export default function SlideInspector() {
       <div className="inspector-content">
         {/* Slide Title */}
         <div className="form-group">
-          <label className="form-label">Judul / Catatan Adegan</label>
+          <label className="form-label">Catatan / Judul Adegan</label>
           <input
             type="text"
             className="form-input"
@@ -170,7 +186,7 @@ export default function SlideInspector() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Status Info</label>
+              <label className="form-label">Status Info WhatsApp</label>
               <input
                 type="text"
                 className="form-input"
@@ -196,7 +212,7 @@ export default function SlideInspector() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {(content.messages || []).map((msg, mIdx) => (
+                {(content.messages || []).map((msg) => (
                   <div
                     key={msg.id}
                     style={{
@@ -344,15 +360,77 @@ export default function SlideInspector() {
               />
             </div>
 
+            {/* Quote Tweet Toggle */}
             <div className="form-group">
-              <label className="form-label">URL Foto Lampiran (Opsional)</label>
-              <input
-                type="text"
-                className="form-input"
-                value={content.mediaUrl || ''}
-                onChange={(e) => updateSlideContent(activeSlide.id, { mediaUrl: e.target.value })}
-                placeholder="https://..."
-              />
+              <div className="form-label">
+                <span><Quote size={12} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} /> Kutip Tweet Lain (Quote Tweet)</span>
+                <input
+                  type="checkbox"
+                  checked={content.quoteTweet?.enabled || false}
+                  onChange={(e) =>
+                    updateSlideContent(activeSlide.id, {
+                      quoteTweet: {
+                        ...content.quoteTweet,
+                        enabled: e.target.checked,
+                        authorId: project.characters[1]?.id || project.characters[0]?.id
+                      }
+                    })
+                  }
+                />
+              </div>
+              {content.quoteTweet?.enabled && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: 'var(--bg-tertiary)', padding: 8, borderRadius: 8 }}>
+                  <select
+                    className="form-select"
+                    value={content.quoteTweet?.authorId}
+                    onChange={(e) =>
+                      updateSlideContent(activeSlide.id, {
+                        quoteTweet: { ...content.quoteTweet, authorId: e.target.value }
+                      })
+                    }
+                  >
+                    {project.characters.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.handle})
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    value={content.quoteTweet?.text || ''}
+                    onChange={(e) =>
+                      updateSlideContent(activeSlide.id, {
+                        quoteTweet: { ...content.quoteTweet, text: e.target.value }
+                      })
+                    }
+                    placeholder="Teks tweet yang dikutip..."
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Poll Toggle */}
+            <div className="form-group">
+              <div className="form-label">
+                <span><BarChart2 size={12} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} /> Polling Twitter</span>
+                <input
+                  type="checkbox"
+                  checked={content.poll?.enabled || false}
+                  onChange={(e) =>
+                    updateSlideContent(activeSlide.id, {
+                      poll: {
+                        ...content.poll,
+                        enabled: e.target.checked,
+                        options: [
+                          { text: 'Setuju banget', percent: 68 },
+                          { text: 'Enggak deh', percent: 32 }
+                        ]
+                      }
+                    })
+                  }
+                />
+              </div>
             </div>
 
             <div className="form-group">
@@ -418,17 +496,15 @@ export default function SlideInspector() {
           </>
         )}
 
-        {/* ----------------- INSTAGRAM INSPECTOR ----------------- */}
-        {activeSlide.type === 'ig_dm' && (
+        {/* ----------------- INSTAGRAM STORY INSPECTOR ----------------- */}
+        {activeSlide.type === 'ig_story' && (
           <>
             <div className="form-group">
-              <label className="form-label">Teman Obrolan IG</label>
+              <label className="form-label">Pembuat Story</label>
               <select
                 className="form-select"
-                value={content.targetCharacterId || project.characters[0]?.id}
-                onChange={(e) =>
-                  updateSlideContent(activeSlide.id, { targetCharacterId: e.target.value })
-                }
+                value={content.authorId || project.characters[0]?.id}
+                onChange={(e) => updateSlideContent(activeSlide.id, { authorId: e.target.value })}
               >
                 {project.characters.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -439,74 +515,82 @@ export default function SlideInspector() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Keterangan Dilihat (Seen)</label>
-              <input
-                type="text"
-                className="form-input"
-                value={content.seenText || 'Dilihat baru saja'}
-                onChange={(e) =>
-                  updateSlideContent(activeSlide.id, { seenText: e.target.value })
-                }
-              />
+              <label className="form-label">Foto Background Story</label>
+              <button
+                type="button"
+                className="btn-header"
+                style={{ width: '100%', justifyContent: 'center', background: 'var(--accent-gradient)', color: 'white' }}
+                onClick={() => openWallpaperPicker('backgroundUrl')}
+              >
+                <Sparkles size={13} />
+                <span>Pilih Foto dari Galeri Estetik</span>
+              </button>
             </div>
 
             <div className="form-group">
               <div className="form-label">
-                <span>Daftar Pesan DM ({content.messages?.length || 0})</span>
-                <button
-                  className="btn-header"
-                  style={{ padding: '3px 8px', fontSize: '11px' }}
-                  onClick={handleAddChatMessage}
-                >
-                  <Plus size={12} /> Tambah
-                </button>
+                <span><Star size={12} color="#10b981" style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} /> Mode Teman Dekat (Close Friends)</span>
+                <input
+                  type="checkbox"
+                  checked={content.isCloseFriends !== false}
+                  onChange={(e) => updateSlideContent(activeSlide.id, { isCloseFriends: e.target.checked })}
+                />
               </div>
+            </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {(content.messages || []).map((msg) => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      background: 'var(--bg-tertiary)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 8,
-                      padding: 8,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <select
-                        className="form-select"
-                        style={{ fontSize: '11px', width: 'auto', padding: '2px 6px' }}
-                        value={msg.senderId}
-                        onChange={(e) => handleUpdateMessage(msg.id, { senderId: e.target.value })}
-                      >
-                        <option value="me">Saya (Ungu Gradient)</option>
-                        <option value={content.targetCharacterId || project.characters[0]?.id}>
-                          Teman (Abu-Abu)
-                        </option>
-                      </select>
-                      <button
-                        className="btn-header"
-                        style={{ padding: '2px 6px', color: '#ef4444' }}
-                        onClick={() => handleDeleteMessage(msg.id)}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-
-                    <textarea
-                      className="form-textarea"
-                      rows={2}
-                      style={{ fontSize: '12px' }}
-                      value={msg.text || ''}
-                      onChange={(e) => handleUpdateMessage(msg.id, { text: e.target.value })}
-                    />
-                  </div>
-                ))}
+            <div className="form-group">
+              <label className="form-label">Stiker Lagu Musik (Spotify / IG Music)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={content.musicSticker?.song || 'About You'}
+                  onChange={(e) =>
+                    updateSlideContent(activeSlide.id, {
+                      musicSticker: { ...content.musicSticker, song: e.target.value }
+                    })
+                  }
+                  placeholder="Judul Lagu"
+                />
+                <input
+                  type="text"
+                  className="form-input"
+                  value={content.musicSticker?.artist || 'The 1975'}
+                  onChange={(e) =>
+                    updateSlideContent(activeSlide.id, {
+                      musicSticker: { ...content.musicSticker, artist: e.target.value }
+                    })
+                  }
+                  placeholder="Artis"
+                />
               </div>
+            </div>
+
+            <div className="form-group">
+              <div className="form-label">
+                <span>Stiker Kotak Pertanyaan (Question Box)</span>
+                <input
+                  type="checkbox"
+                  checked={content.questionSticker?.enabled !== false}
+                  onChange={(e) =>
+                    updateSlideContent(activeSlide.id, {
+                      questionSticker: { ...content.questionSticker, enabled: e.target.checked }
+                    })
+                  }
+                />
+              </div>
+              {content.questionSticker?.enabled !== false && (
+                <input
+                  type="text"
+                  className="form-input"
+                  value={content.questionSticker?.prompt || 'Tanya aku apapun...'}
+                  onChange={(e) =>
+                    updateSlideContent(activeSlide.id, {
+                      questionSticker: { ...content.questionSticker, prompt: e.target.value }
+                    })
+                  }
+                />
+              )}
             </div>
           </>
         )}
@@ -514,6 +598,19 @@ export default function SlideInspector() {
         {/* ----------------- LOCKSCREEN INSPECTOR ----------------- */}
         {activeSlide.type === 'lockscreen' && (
           <>
+            <div className="form-group">
+              <label className="form-label">Wallpaper Layar Kunci</label>
+              <button
+                type="button"
+                className="btn-header"
+                style={{ width: '100%', justifyContent: 'center', background: 'var(--accent-gradient)', color: 'white' }}
+                onClick={() => openWallpaperPicker('wallpaperUrl')}
+              >
+                <Sparkles size={13} />
+                <span>Pilih Wallpaper dari Katalog</span>
+              </button>
+            </div>
+
             <div className="form-group">
               <label className="form-label">Format Tanggal</label>
               <input
@@ -523,19 +620,6 @@ export default function SlideInspector() {
                 onChange={(e) =>
                   updateSlideContent(activeSlide.id, { dateString: e.target.value })
                 }
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">URL Wallpaper Layar Kunci</label>
-              <input
-                type="text"
-                className="form-input"
-                value={content.wallpaperUrl || ''}
-                onChange={(e) =>
-                  updateSlideContent(activeSlide.id, { wallpaperUrl: e.target.value })
-                }
-                placeholder="https://..."
               />
             </div>
 
@@ -621,6 +705,17 @@ export default function SlideInspector() {
           </>
         )}
       </div>
+
+      {/* Asset Picker Modal */}
+      <AssetPickerModal
+        isOpen={assetPickerOpen}
+        onClose={() => setAssetPickerOpen(false)}
+        type="wallpaper"
+        currentUrl={content[assetTargetField]}
+        onSelect={(selectedUrl) => {
+          updateSlideContent(activeSlide.id, { [assetTargetField]: selectedUrl });
+        }}
+      />
     </aside>
   );
 }

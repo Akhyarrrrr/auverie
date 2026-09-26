@@ -1,14 +1,25 @@
 import React from 'react';
-import { Lock, Flashlight, Camera, MessageSquare } from 'lucide-react';
+import {
+  Lock,
+  Flashlight,
+  Camera,
+  MessageSquare,
+  Play,
+  SkipBack,
+  SkipForward
+} from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 
 export default function LockscreenView({ slide }) {
   const { project } = useProject();
   const content = slide.content || {};
   const notifications = content.notifications || [];
-  const time = slide.customSettings?.time || project.globalSettings.time || "23:45";
+  const globalSettings = project.globalSettings || {};
+  const time = slide.customSettings?.time || globalSettings.time || "23:45";
   const dateString = content.dateString || "Jumat, 26 September";
   const wallpaperUrl = content.wallpaperUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80";
+  const fontStyle = globalSettings.lockscreenFont || 'bold';
+  const music = globalSettings.lockscreenMusic || {};
 
   return (
     <div
@@ -24,8 +35,41 @@ export default function LockscreenView({ slide }) {
             <Lock size={15} strokeWidth={2.5} />
           </div>
           <span className="lockscreen-date">{dateString}</span>
-          <span className="lockscreen-clock">{time}</span>
+          <span className={`lockscreen-clock font-${fontStyle}`}>{time}</span>
         </div>
+
+        {/* Lockscreen Music Player Widget (Spotify / Apple Music) */}
+        {music.enabled && (
+          <div className="lockscreen-music-widget">
+            <div className="music-widget-top">
+              <img
+                src={music.albumArt || "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80"}
+                alt=""
+                className="music-widget-album"
+              />
+              <div className="music-widget-info">
+                <span className="music-widget-title">{music.title || "Penjaga Hati"}</span>
+                <span className="music-widget-artist">{music.artist || "Nadhif Basalamah"}</span>
+              </div>
+            </div>
+
+            <div className="music-widget-progress-bar">
+              <div className="music-progress-track">
+                <div className="music-progress-fill" />
+              </div>
+              <div className="music-widget-times">
+                <span>{music.progress || "1:24"}</span>
+                <span>-{music.duration || "3:42"}</span>
+              </div>
+            </div>
+
+            <div className="music-widget-controls">
+              <SkipBack size={18} fill="currentColor" />
+              <Play size={20} fill="currentColor" />
+              <SkipForward size={18} fill="currentColor" />
+            </div>
+          </div>
+        )}
 
         {/* Stacked Notification Cards */}
         <div className="lockscreen-notifs-container">
@@ -63,7 +107,7 @@ export default function LockscreenView({ slide }) {
           })}
         </div>
 
-        {/* Bottom Flashlight & Camera Shortcuts */}
+        {/* Bottom Shortcuts */}
         <div className="lockscreen-bottom-bar">
           <div className="lockscreen-circle-btn">
             <Flashlight size={20} />

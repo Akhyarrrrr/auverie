@@ -1,31 +1,24 @@
 import React, { useState } from 'react';
-import { UserPlus, Trash2, CheckCircle2, Image, Upload } from 'lucide-react';
+import { UserPlus, Trash2, CheckCircle2, Image, Upload, Sparkles } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import AssetPickerModal from './AssetPickerModal';
+import { AESTHETIC_AVATARS } from '../../data/samplePresets';
 
 export default function CharacterManager() {
   const { project, addCharacter, updateCharacter, deleteCharacter } = useProject();
   const [selectedCharId, setSelectedCharId] = useState(project.characters[0]?.id || null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const activeChar = project.characters.find(c => c.id === selectedCharId) || project.characters[0];
 
-  // Helper for uploading image file to base64
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeChar) return;
-
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      updateCharacter(activeChar.id, { avatar: uploadEvent.target.result });
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleAddNewCharacter = () => {
+    const randomAvatar = AESTHETIC_AVATARS[project.characters.length % AESTHETIC_AVATARS.length];
     const newChar = addCharacter({
       name: `Karakter ${project.characters.length + 1}`,
       handle: `@karakter${project.characters.length + 1}`,
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      verified: false
+      avatar: randomAvatar.url,
+      verified: false,
+      verifiedType: "none"
     });
     setSelectedCharId(newChar.id);
   };
@@ -123,28 +116,28 @@ export default function CharacterManager() {
               src={activeChar.avatar}
               alt=""
               style={{
-                width: '54px',
-                height: '54px',
+                width: '56px',
+                height: '56px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '2px solid var(--border-medium)'
+                border: '2px solid var(--border-medium)',
+                cursor: 'pointer'
               }}
+              onClick={() => setPickerOpen(true)}
+              title="Klik untuk ganti foto"
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label
+              <button
+                type="button"
                 className="btn-header"
-                style={{ fontSize: '11px', padding: '4px 10px', cursor: 'pointer' }}
+                style={{ fontSize: '11.5px', padding: '5px 12px', background: 'var(--accent-gradient)', color: 'white' }}
+                onClick={() => setPickerOpen(true)}
               >
-                <Upload size={12} /> Unggah Foto
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={handleAvatarUpload}
-                />
-              </label>
-              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                PNG, JPG atau WebP
+                <Sparkles size={13} />
+                <span>Pilih Foto Estetik</span>
+              </button>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                Katalog siap pakai atau upload foto
               </span>
             </div>
           </div>
@@ -171,29 +164,35 @@ export default function CharacterManager() {
             />
           </div>
 
+          {/* Centang Verifikasi (Biru / Emas / Tidak ada) */}
           <div className="form-group">
-            <label className="form-label">URL Foto Avatar</label>
-            <input
-              type="text"
-              className="form-input"
-              value={activeChar.avatar}
-              onChange={(e) => updateCharacter(activeChar.id, { avatar: e.target.value })}
-              placeholder="https://..."
-            />
+            <label className="form-label">Lencana Verifikasi (Badge)</label>
+            <div className="segmented-control">
+              <button
+                type="button"
+                className={`segmented-item ${!activeChar.verified ? 'active' : ''}`}
+                onClick={() => updateCharacter(activeChar.id, { verified: false, verifiedType: 'none' })}
+              >
+                Biasa
+              </button>
+              <button
+                type="button"
+                className={`segmented-item ${activeChar.verified && activeChar.verifiedType !== 'gold' ? 'active' : ''}`}
+                onClick={() => updateCharacter(activeChar.id, { verified: true, verifiedType: 'blue' })}
+              >
+                Centang Biru
+              </button>
+              <button
+                type="button"
+                className={`segmented-item ${activeChar.verified && activeChar.verifiedType === 'gold' ? 'active' : ''}`}
+                onClick={() => updateCharacter(activeChar.id, { verified: true, verifiedType: 'gold' })}
+              >
+                Centang Emas
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={activeChar.verified || false}
-                onChange={(e) => updateCharacter(activeChar.id, { verified: e.target.checked })}
-              />
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <CheckCircle2 size={14} color="#1d9bf0" /> Centang Biru (Verified)
-              </span>
-            </label>
-
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '4px' }}>
             {project.characters.length > 1 && (
               <button
                 className="btn-header"
@@ -206,11 +205,25 @@ export default function CharacterManager() {
                 title="Hapus Karakter"
               >
                 <Trash2 size={13} />
+                <span>Hapus Karakter</span>
               </button>
             )}
           </div>
         </div>
       )}
+
+      {/* Visual Asset Picker Modal */}
+      <AssetPickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        type="avatar"
+        currentUrl={activeChar?.avatar}
+        onSelect={(newAvatarUrl) => {
+          if (activeChar) {
+            updateCharacter(activeChar.id, { avatar: newAvatarUrl });
+          }
+        }}
+      />
     </div>
   );
 }

@@ -1,18 +1,49 @@
-import React from 'react';
-import { ChevronLeft, Video, Phone, MoreVertical, Play, Mic, Paperclip, Smile, CheckCheck, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ChevronLeft,
+  Video,
+  Phone,
+  MoreVertical,
+  Play,
+  Pause,
+  Mic,
+  Paperclip,
+  Smile,
+  CheckCheck,
+  Check,
+  CornerDownRight,
+  Ban
+} from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 
 export default function WhatsAppView({ slide, isGroup = false }) {
-  const { project, getCharacter } = useProject();
+  const { project, getCharacter, updateSlideContent } = useProject();
   const content = slide.content || {};
   const targetChar = getCharacter(content.targetCharacterId);
   const messages = content.messages || [];
-  const theme = slide.customSettings?.theme || project.globalSettings.theme || 'dark';
+  const globalSettings = project.globalSettings || {};
+  const theme = slide.customSettings?.theme || globalSettings.theme || 'dark';
+  const whatsappStyle = globalSettings.whatsappStyle || 'ios';
+
+  const [playingVnId, setPlayingVnId] = useState(null);
+
+  const toggleVnPlay = (msgId) => {
+    setPlayingVnId(prev => (prev === msgId ? null : msgId));
+  };
+
+  const handleUpdateMessageText = (msgId, newText) => {
+    updateSlideContent(slide.id, (prev) => ({
+      ...prev,
+      messages: (prev.messages || []).map((m) =>
+        m.id === msgId ? { ...m, text: newText } : m
+      )
+    }));
+  };
 
   return (
     <div className={`wa-mockup-wrapper ${theme}`}>
-      {/* WhatsApp Header */}
-      <div className="wa-header">
+      {/* WhatsApp Header (iOS vs Android) */}
+      <div className={`wa-header ${whatsappStyle === 'android' ? 'style-android' : ''}`}>
         <div className="wa-header-left">
           <div className="wa-back-btn">
             <ChevronLeft size={22} strokeWidth={2.5} />
@@ -42,20 +73,22 @@ export default function WhatsAppView({ slide, isGroup = false }) {
         </div>
       </div>
 
-      {/* Chat Messages */}
+      {/* Chat Messages Body with WhatsApp Doodle */}
       <div className="wa-chat-body">
         <div className="wa-date-pill">HARI INI</div>
 
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
           const isMe = msg.senderId === 'me';
           const sender = getCharacter(msg.senderId);
+          const hasTail = msg.hasTail !== false;
+          const isPlaying = playingVnId === msg.id;
 
           return (
             <div
               key={msg.id}
               className={`wa-bubble-container ${isMe ? 'me' : 'other'}`}
             >
-              <div className="wa-bubble">
+              <div className={`wa-bubble ${hasTail ? 'has-tail' : ''}`}>
                 {/* Sender Name in Group Chat */}
                 {isGroup && !isMe && (
                   <div className="wa-sender-header" style={{ color: sender.color || '#00a884' }}>
@@ -63,7 +96,23 @@ export default function WhatsAppView({ slide, isGroup = false }) {
                   </div>
                 )}
 
-                {/* Media Image Attachment */}
+                {/* Forwarded Tag */}
+                {msg.isForwarded && (
+                  <div className="wa-forwarded-tag">
+                    <CornerDownRight size={11} />
+                    <span>Diteruskan</span>
+                  </div>
+                )}
+
+                {/* Reply / Quote Preview Box */}
+                {msg.replyTo && (
+                  <div className="wa-reply-quote-box">
+                    <span className="wa-reply-quote-author">{msg.replyTo.senderName || 'Lawan Bicara'}</span>
+                    <span className="wa-reply-quote-text">{msg.replyTo.textPreview || '...'}</span>
+                  </div>
+                )}
+
+                {/* Message Image Attachment */}
                 {msg.mediaUrl && (
                   <img
                     src={msg.mediaUrl}
@@ -72,24 +121,38 @@ export default function WhatsAppView({ slide, isGroup = false }) {
                   />
                 )}
 
-                {/* Voice Note */}
-                {msg.isVoiceNote ? (
+                {/* Deleted Message State */}
+                {msg.isDeleted ? (
+                  <div className="wa-deleted-msg">
+                    <Ban size={14} />
+                    <span>Pesan ini telah dihapus</span>
+                  </div>
+                ) : msg.isVoiceNote ? (
+                  /* Authentic Voice Note with waveform & avatar */
                   <div className="wa-vn-wrapper">
-                    <div className="wa-vn-play-btn">
-                      <Play size={15} fill="currentColor" />
+                    <div className="wa-vn-avatar-box">
+                      <img src={sender.avatar} alt="" className="wa-vn-avatar" />
+                    </div>
+                    <div className="wa-vn-play-btn" onClick={() => toggleVnPlay(msg.id)}>
+                      {isPlaying ? (
+                        <Pause size={14} fill="currentColor" />
+                      ) : (
+                        <Play size={14} fill="currentColor" />
+                      )}
                     </div>
                     <div className="wa-vn-waveform">
-                      {[12, 18, 8, 22, 14, 20, 16, 10, 24, 18, 12, 16, 20, 14, 8, 18, 22, 10, 14].map((h, i) => (
+                      {[10, 16, 8, 22, 14, 20, 16, 12, 24, 18, 12, 16, 20, 14, 8, 18, 22, 10, 14, 16, 8].map((h, i) => (
                         <div
                           key={i}
-                          className={`wa-waveform-bar ${i < 8 ? 'active' : ''}`}
+                          className={`wa-waveform-bar ${i < (isPlaying ? 14 : 7) ? 'active' : ''}`}
                           style={{ height: `${h}px` }}
                         />
                       ))}
                     </div>
-                    <Mic size={14} style={{ opacity: 0.7 }} />
+                    <span className="wa-vn-speed-pill">1.5x</span>
                   </div>
                 ) : (
+                  /* Normal Text Message */
                   <span>{msg.text}</span>
                 )}
 
@@ -98,7 +161,7 @@ export default function WhatsAppView({ slide, isGroup = false }) {
                   <span className="wa-time">
                     {msg.isVoiceNote ? (msg.voiceDuration || "0:24") : (msg.time || "23:45")}
                   </span>
-                  {isMe && (
+                  {isMe && !msg.isDeleted && (
                     <span className={`wa-check-icon ${msg.status === 'read' ? 'read' : 'sent'}`}>
                       {msg.status === 'read' || msg.status === 'delivered' ? (
                         <CheckCheck size={14} strokeWidth={2} />
@@ -109,7 +172,7 @@ export default function WhatsAppView({ slide, isGroup = false }) {
                   )}
                 </div>
 
-                {/* Emoji Reactions */}
+                {/* Emoji Reactions Pill */}
                 {msg.reactions && msg.reactions.length > 0 && (
                   <div className="wa-reaction-tag">
                     {msg.reactions.join(' ')}

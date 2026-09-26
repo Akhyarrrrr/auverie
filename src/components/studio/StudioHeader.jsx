@@ -9,7 +9,8 @@ import {
   FileText,
   Check,
   Loader2,
-  FolderArchive
+  FolderArchive,
+  BookOpen
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import {
@@ -20,11 +21,10 @@ import {
 } from '../../services/exportService';
 import { downloadProjectAsJson, parseProjectJsonFile } from '../../services/storage';
 
-export default function StudioHeader({ onOpenScriptModal }) {
+export default function StudioHeader({ onOpenScriptModal, onOpenTemplateModal }) {
   const {
     project,
     updateTitle,
-    resetToSample,
     setProject,
     activeSlideIndex,
     setActiveSlideIndex,
@@ -47,7 +47,7 @@ export default function StudioHeader({ onOpenScriptModal }) {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error(err);
-      alert('Gagal menyalin gambar ke clipboard. Pastikan browser memberi izin clipboard.');
+      alert('Gagal menyalin gambar ke clipboard.');
       setCopied(false);
     }
   };
@@ -77,8 +77,7 @@ export default function StudioHeader({ onOpenScriptModal }) {
       // Render each slide sequentially
       const renderSlideAsync = async (slide, index) => {
         setActiveSlideIndex(index);
-        // Wait 300ms for React state and images to paint
-        await new Promise(r => setTimeout(r, 350));
+        await new Promise(r => setTimeout(r, 380));
         const element = document.getElementById('phone-screen-canvas');
         if (!element) throw new Error('Phone canvas container not found');
         return await exportElementAsBlob(element, 2);
@@ -91,7 +90,6 @@ export default function StudioHeader({ onOpenScriptModal }) {
         (progress) => setExportProgress(progress)
       );
 
-      // Restore active slide
       setActiveSlideIndex(originalSlideIndex);
       alert(`Berhasil mengekspor seluruh ${project.slides.length} slide ke dalam file ZIP!`);
     } catch (err) {
@@ -145,6 +143,16 @@ export default function StudioHeader({ onOpenScriptModal }) {
       <div className="header-center-actions">
         <button
           className="btn-header"
+          onClick={onOpenTemplateModal}
+          style={{ background: 'rgba(236, 72, 153, 0.15)', borderColor: 'rgba(236, 72, 153, 0.4)', color: '#f472b6' }}
+          title="Pilih template cerita pembuka instan"
+        >
+          <BookOpen size={15} />
+          <span>Template Cerita</span>
+        </button>
+
+        <button
+          className="btn-header"
           onClick={onOpenScriptModal}
           title="Tulis naskah dialog cepat langsung jadi slide"
         >
@@ -154,20 +162,11 @@ export default function StudioHeader({ onOpenScriptModal }) {
 
         <button
           className="btn-header"
-          onClick={resetToSample}
-          title="Muat ulang contoh cerita template"
-        >
-          <RotateCcw size={14} />
-          <span>Contoh Cerita</span>
-        </button>
-
-        <button
-          className="btn-header"
           onClick={handleExportJson}
           title="Simpan file proyek (.aujson) untuk backup"
         >
           <FileJson size={14} />
-          <span>Simpan Proyek</span>
+          <span>Simpan .aujson</span>
         </button>
 
         <button
@@ -176,7 +175,7 @@ export default function StudioHeader({ onOpenScriptModal }) {
           title="Buka file proyek (.aujson)"
         >
           <Upload size={14} />
-          <span>Buka Proyek</span>
+          <span>Buka .aujson</span>
         </button>
         <input
           type="file"

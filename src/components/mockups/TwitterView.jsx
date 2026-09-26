@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, MessageCircle, Repeat2, Heart, Bookmark, Share, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Repeat2, Heart, Bookmark, Share } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 
 export default function TwitterView({ slide, isDm = false }) {
@@ -8,7 +8,7 @@ export default function TwitterView({ slide, isDm = false }) {
   const author = getCharacter(content.authorId);
   const theme = slide.customSettings?.theme || project.globalSettings.theme || 'dark';
 
-  // Helper to format text with hashtags and mentions in blue
+  // Format hashtags and mentions in Twitter Blue
   const renderFormattedText = (text = '') => {
     const parts = text.split(/([#@][\w_]+)/g);
     return parts.map((part, i) => {
@@ -18,6 +18,10 @@ export default function TwitterView({ slide, isDm = false }) {
       return part;
     });
   };
+
+  const quoteTweet = content.quoteTweet || {};
+  const quoteAuthor = quoteTweet.enabled ? getCharacter(quoteTweet.authorId) : null;
+  const poll = content.poll || {};
 
   return (
     <div className={`x-mockup-wrapper ${theme}`}>
@@ -47,10 +51,17 @@ export default function TwitterView({ slide, isDm = false }) {
                   {author.name}
                   {author.verified && (
                     <span className="x-verified-badge" title="Terverifikasi">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1d9bf0">
-                        <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.79-4-4-4-.495 0-.965.084-1.4.238C14.55 2.475 13.18 1.6 11.6 1.6c-1.58 0-2.95.875-3.6 2.148-.435-.154-.905-.238-1.4-.238-2.21 0-4 1.79-4 4 0 .495.084.965.238 1.4C1.575 9.55.7 10.92.7 12.5c0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.79 4 4 4 .495 0 .965-.084 1.4-.238 1.05 1.273 2.42 2.148 4 2.148 1.58 0 2.95-.875 3.6-2.148.435.154.905.238 1.4.238 2.21 0 4-1.79 4-4 0-.495-.084-.965-.238-1.4 1.273-1.05 2.148-2.42 2.148-4z" />
-                        <path d="M10.2 16.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z" fill="#ffffff" />
-                      </svg>
+                      {author.verifiedType === 'gold' ? (
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="#e2b714">
+                          <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.79-4-4-4-.495 0-.965.084-1.4.238C14.55 2.475 13.18 1.6 11.6 1.6c-1.58 0-2.95.875-3.6 2.148-.435-.154-.905-.238-1.4-.238-2.21 0-4 1.79-4 4 0 .495.084.965.238 1.4C1.575 9.55.7 10.92.7 12.5c0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.79 4 4 4 .495 0 .965-.084 1.4-.238 1.05 1.273 2.42 2.148 4 2.148 1.58 0 2.95-.875 3.6-2.148.435.154.905.238 1.4.238 2.21 0 4-1.79 4-4 0-.495-.084-.965-.238-1.4 1.273-1.05 2.148-2.42 2.148-4z" />
+                          <path d="M10.2 16.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z" fill="#000000" />
+                        </svg>
+                      ) : (
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="#1d9bf0">
+                          <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.79-4-4-4-.495 0-.965.084-1.4.238C14.55 2.475 13.18 1.6 11.6 1.6c-1.58 0-2.95.875-3.6 2.148-.435-.154-.905-.238-1.4-.238-2.21 0-4 1.79-4 4 0 .495.084.965.238 1.4C1.575 9.55.7 10.92.7 12.5c0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.79 4 4 4 .495 0 .965-.084 1.4-.238 1.05 1.273 2.42 2.148 4 2.148 1.58 0 2.95-.875 3.6-2.148.435.154.905.238 1.4.238 2.21 0 4-1.79 4-4 0-.495-.084-.965-.238-1.4 1.273-1.05 2.148-2.42 2.148-4z" />
+                          <path d="M10.2 16.2l-3.5-3.5 1.4-1.4 2.1 2.1 5.3-5.3 1.4 1.4-6.7 6.7z" fill="#ffffff" />
+                        </svg>
+                      )}
                     </span>
                   )}
                 </span>
@@ -63,6 +74,39 @@ export default function TwitterView({ slide, isDm = false }) {
           <div className="x-post-text">
             {renderFormattedText(content.text)}
           </div>
+
+          {/* Translate link */}
+          <div className="x-translate-link">
+            Terjemahkan postingan
+          </div>
+
+          {/* Quoted Tweet Box (Retweet with comment) */}
+          {quoteTweet.enabled && quoteAuthor && (
+            <div className="x-quote-card">
+              <div className="x-quote-header">
+                <img src={quoteAuthor.avatar} alt="" className="x-quote-avatar" />
+                <span className="x-quote-name">{quoteAuthor.name}</span>
+                <span className="x-quote-handle">{quoteAuthor.handle}</span>
+              </div>
+              <div className="x-quote-text">
+                {renderFormattedText(quoteTweet.text || 'Isi tweet yang dikutip...')}
+              </div>
+            </div>
+          )}
+
+          {/* Twitter Poll Mockup */}
+          {poll.enabled && poll.options && (
+            <div className="x-poll-container">
+              {poll.options.map((opt, oIdx) => (
+                <div key={oIdx} className="x-poll-option">
+                  <div className="x-poll-bar" style={{ width: `${opt.percent || 25}%` }} />
+                  <span className="x-poll-label">{opt.text}</span>
+                  <span className="x-poll-pct">{opt.percent || 25}%</span>
+                </div>
+              ))}
+              <span className="x-poll-meta">{poll.totalVotes || '1,420'} suara · 1 hari tersisa</span>
+            </div>
+          )}
 
           {/* Media Image Attachment */}
           {content.mediaUrl && (

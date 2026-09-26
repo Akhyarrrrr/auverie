@@ -19,6 +19,8 @@ import StoryboardStrip from './components/studio/StoryboardStrip';
 import SlideInspector from './components/studio/SlideInspector';
 import PhoneContainer from './components/phone/PhoneContainer';
 import QuickScriptModal from './components/studio/QuickScriptModal';
+import TemplateStoryModal from './components/studio/TemplateStoryModal';
+import QuickAddBubbleBar from './components/studio/QuickAddBubbleBar';
 import { copyElementToClipboard, downloadElementAsPng } from './services/exportService';
 
 export default function App() {
@@ -33,8 +35,9 @@ export default function App() {
     exportProgress
   } = useProject();
 
-  const [zoom, setZoom] = useState(0.9);
+  const [zoom, setZoom] = useState(0.88);
   const [scriptModalOpen, setScriptModalOpen] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [copiedQuick, setCopiedQuick] = useState(false);
 
   const handleCopyCurrent = async () => {
@@ -64,7 +67,10 @@ export default function App() {
   return (
     <div className="studio-layout">
       {/* Studio Header Bar */}
-      <StudioHeader onOpenScriptModal={() => setScriptModalOpen(true)} />
+      <StudioHeader
+        onOpenScriptModal={() => setScriptModalOpen(true)}
+        onOpenTemplateModal={() => setTemplateModalOpen(true)}
+      />
 
       {/* Main Studio Viewport */}
       <div className="studio-body">
@@ -83,7 +89,7 @@ export default function App() {
               onClick={() => setActiveTab('device')}
             >
               <Smartphone size={16} />
-              <span>Status HP</span>
+              <span>Model HP & Sinyal</span>
             </button>
           </div>
 
@@ -117,7 +123,7 @@ export default function App() {
             </button>
             <button
               className="canvas-toolbar-btn"
-              onClick={() => setZoom(0.9)}
+              onClick={() => setZoom(0.88)}
               title="Reset Zoom"
             >
               <Maximize2 size={13} />
@@ -167,6 +173,9 @@ export default function App() {
           <div className="phone-stage-wrapper">
             <PhoneContainer slide={activeSlide} zoom={zoom} />
           </div>
+
+          {/* Quick Action Floating Bar directly below the phone screen */}
+          <QuickAddBubbleBar />
         </main>
 
         {/* Right Inspector Panel */}
@@ -180,6 +189,12 @@ export default function App() {
       <QuickScriptModal
         isOpen={scriptModalOpen}
         onClose={() => setScriptModalOpen(false)}
+      />
+
+      {/* Instant Story Pack Template Modal */}
+      <TemplateStoryModal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
       />
 
       {/* Batch Export Progress Overlay */}

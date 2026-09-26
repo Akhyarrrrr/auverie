@@ -1,4 +1,4 @@
-/* Twitter / X Mockup Styles */
+/* Twitter / X Mockup Styles (Maximal Authenticity) */
 .x-mockup-wrapper {
   flex: 1;
   display: flex;
@@ -9,6 +9,23 @@
   height: 100%;
   position: relative;
   overflow: hidden;
+}
+
+/* Dim Mode Theme (#15202b) */
+.x-mockup-wrapper.dim {
+  background-color: #15202b;
+  color: #f7f9f9;
+}
+
+.x-mockup-wrapper.dim .x-header {
+  background-color: rgba(21, 32, 43, 0.85);
+  border-bottom: 1px solid #38444d;
+}
+
+.x-mockup-wrapper.dim .x-meta-footer,
+.x-mockup-wrapper.dim .x-metrics-row,
+.x-mockup-wrapper.dim .x-actions-bar {
+  border-color: #38444d;
 }
 
 .x-mockup-wrapper.light {
@@ -47,7 +64,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* Main Post Card */
@@ -102,7 +119,6 @@
 }
 
 .x-verified-badge {
-  color: #1d9bf0;
   display: inline-flex;
 }
 
@@ -112,11 +128,63 @@
   line-height: 1.4;
   white-space: pre-wrap;
   word-break: break-word;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .x-hashtag, .x-mention {
   color: #1d9bf0;
+}
+
+.x-translate-link {
+  font-size: 13.5px;
+  color: #1d9bf0;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+/* Quote Tweet Card Inside Post */
+.x-quote-card {
+  border: 1px solid #2f3336;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.x-mockup-wrapper.light .x-quote-card {
+  border-color: #cfd9de;
+  background: #f7f9f9;
+}
+
+.x-quote-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.x-quote-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.x-quote-name {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.x-quote-handle {
+  font-size: 13px;
+  color: #71767b;
+}
+
+.x-quote-text {
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 /* Attached Media in Tweet */
@@ -137,6 +205,51 @@
   max-height: 280px;
   object-fit: cover;
   display: block;
+}
+
+/* Twitter Poll Card */
+.x-poll-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.x-poll-option {
+  position: relative;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.x-mockup-wrapper.light .x-poll-option {
+  background: #f0f3f4;
+}
+
+.x-poll-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(29, 155, 240, 0.35);
+  z-index: 1;
+}
+
+.x-poll-label, .x-poll-pct {
+  position: relative;
+  z-index: 2;
+}
+
+.x-poll-meta {
+  font-size: 13px;
+  color: #71767b;
 }
 
 /* Post Metadata (Time & Device) */
