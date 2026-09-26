@@ -1,0 +1,353 @@
+/* WhatsApp Mockup Theme & Elements */
+.wa-mockup-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #0b141a;
+  color: #e9edef;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.wa-mockup-wrapper.light {
+  background-color: #efeae2;
+  color: #111b21;
+}
+
+/* WhatsApp Header */
+.wa-header {
+  height: 98px;
+  min-height: 98px;
+  padding: 44px 14px 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #202c33;
+  z-index: 20;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.wa-mockup-wrapper.light .wa-header {
+  background-color: #f0f2f5;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.wa-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-back-btn {
+  display: flex;
+  align-items: center;
+  color: #00a884;
+}
+
+.wa-mockup-wrapper.light .wa-back-btn {
+  color: #008069;
+}
+
+.wa-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #374248;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.wa-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wa-user-name {
+  font-size: 15.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wa-status-text {
+  font-size: 11.5px;
+  color: #8696a0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-status-text.online {
+  color: #00a884;
+}
+
+.wa-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #8696a0;
+  margin-left: 8px;
+}
+
+/* Chat Messages Stream */
+.wa-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.wa-mockup-wrapper.light .wa-chat-body {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+/* Date Pill in Chat */
+.wa-date-pill {
+  align-self: center;
+  background: rgba(30, 42, 49, 0.85);
+  backdrop-filter: blur(4px);
+  color: #8696a0;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin: 6px 0 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.wa-mockup-wrapper.light .wa-date-pill {
+  background: rgba(255, 255, 255, 0.9);
+  color: #54656f;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Message Bubble */
+.wa-bubble-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 2px;
+}
+
+.wa-bubble-container.me {
+  align-items: flex-end;
+}
+
+.wa-bubble-container.other {
+  align-items: flex-start;
+}
+
+.wa-bubble {
+  max-width: 82%;
+  min-width: 85px;
+  padding: 6px 9px 5px 10px;
+  border-radius: 8px;
+  position: relative;
+  font-size: 14.2px;
+  line-height: 1.35;
+  box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.2);
+  word-break: break-word;
+}
+
+/* Dark Mode Colors */
+.wa-bubble-container.me .wa-bubble {
+  background-color: #005c4b;
+  color: #e9edef;
+  border-top-right-radius: 0;
+}
+
+.wa-bubble-container.other .wa-bubble {
+  background-color: #202c33;
+  color: #e9edef;
+  border-top-left-radius: 0;
+}
+
+/* Light Mode Colors */
+.wa-mockup-wrapper.light .wa-bubble-container.me .wa-bubble {
+  background-color: #d9fdd3;
+  color: #111b21;
+}
+
+.wa-mockup-wrapper.light .wa-bubble-container.other .wa-bubble {
+  background-color: #ffffff;
+  color: #111b21;
+}
+
+.wa-sender-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: #00a884;
+  margin-bottom: 2px;
+}
+
+.wa-bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  float: right;
+  margin-left: 8px;
+  margin-top: 4px;
+}
+
+.wa-time {
+  font-size: 10.5px;
+  color: #8696a0;
+}
+
+.wa-mockup-wrapper.light .wa-time {
+  color: #667781;
+}
+
+.wa-check-icon {
+  display: flex;
+  align-items: center;
+}
+
+.wa-check-icon.read {
+  color: #53bdeb;
+}
+
+.wa-check-icon.sent {
+  color: #8696a0;
+}
+
+/* Voice Note Component */
+.wa-vn-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+  min-width: 210px;
+}
+
+.wa-vn-play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.wa-vn-waveform {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+}
+
+.wa-waveform-bar {
+  width: 2.5px;
+  background: currentColor;
+  opacity: 0.55;
+  border-radius: 2px;
+}
+
+.wa-waveform-bar.active {
+  opacity: 1;
+}
+
+.wa-reaction-tag {
+  position: absolute;
+  bottom: -10px;
+  padding: 1px 5px;
+  background: #202c33;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.wa-mockup-wrapper.light .wa-reaction-tag {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.wa-bubble-container.me .wa-reaction-tag {
+  right: 12px;
+}
+
+.wa-bubble-container.other .wa-reaction-tag {
+  left: 12px;
+}
+
+/* Message Image Attachment */
+.wa-image-attachment {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 6px;
+  object-fit: cover;
+  margin-bottom: 4px;
+}
+
+/* WhatsApp Bottom Input Bar */
+.wa-input-bar {
+  height: 64px;
+  min-height: 64px;
+  padding: 6px 8px 18px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #202c33;
+  z-index: 20;
+}
+
+.wa-mockup-wrapper.light .wa-input-bar {
+  background-color: #f0f2f5;
+}
+
+.wa-input-pill {
+  flex: 1;
+  height: 40px;
+  background: #2a3942;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+  color: #8696a0;
+  font-size: 14.5px;
+}
+
+.wa-mockup-wrapper.light .wa-input-pill {
+  background: #ffffff;
+}
+
+.wa-mic-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #00a884;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

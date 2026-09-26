@@ -1,0 +1,283 @@
+/* Twitter / X Mockup Styles */
+.x-mockup-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
+  color: #e7e9ea;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.x-mockup-wrapper.light {
+  background-color: #ffffff;
+  color: #0f1419;
+}
+
+/* Twitter Top Header */
+.x-header {
+  height: 94px;
+  min-height: 94px;
+  padding: 44px 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #2f3336;
+  z-index: 20;
+}
+
+.x-mockup-wrapper.light .x-header {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid #eff3f4;
+}
+
+.x-header-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.x-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Main Post Card */
+.x-post-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.x-author-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.x-author-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.x-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333639;
+  flex-shrink: 0;
+}
+
+.x-author-names {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.x-name {
+  font-size: 15.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.x-handle {
+  font-size: 14px;
+  color: #71767b;
+}
+
+.x-mockup-wrapper.light .x-handle {
+  color: #536471;
+}
+
+.x-verified-badge {
+  color: #1d9bf0;
+  display: inline-flex;
+}
+
+/* Tweet Text Body */
+.x-post-text {
+  font-size: 16.5px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 14px;
+}
+
+.x-hashtag, .x-mention {
+  color: #1d9bf0;
+}
+
+/* Attached Media in Tweet */
+.x-media-container {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #2f3336;
+  margin-bottom: 14px;
+}
+
+.x-mockup-wrapper.light .x-media-container {
+  border-color: #cfd9de;
+}
+
+.x-media-img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Post Metadata (Time & Device) */
+.x-meta-footer {
+  padding: 12px 0;
+  border-top: 1px solid #2f3336;
+  border-bottom: 1px solid #2f3336;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: #71767b;
+}
+
+.x-mockup-wrapper.light .x-meta-footer {
+  border-color: #eff3f4;
+  color: #536471;
+}
+
+.x-meta-device {
+  color: #1d9bf0;
+}
+
+/* Post Engagement Stats (Counters) */
+.x-metrics-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #2f3336;
+  font-size: 13.5px;
+}
+
+.x-mockup-wrapper.light .x-metrics-row {
+  border-color: #eff3f4;
+}
+
+.x-metric-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #71767b;
+}
+
+.x-mockup-wrapper.light .x-metric-item {
+  color: #536471;
+}
+
+.x-metric-val {
+  font-weight: 700;
+  color: inherit;
+}
+
+.x-mockup-wrapper.light .x-metric-val {
+  color: #0f1419;
+}
+
+/* Post Action Buttons */
+.x-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 10px 0;
+  border-bottom: 1px solid #2f3336;
+  color: #71767b;
+}
+
+.x-mockup-wrapper.light .x-actions-bar {
+  border-color: #eff3f4;
+  color: #536471;
+}
+
+.x-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* Reply Thread Section */
+.x-reply-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  padding-top: 8px;
+}
+
+.x-reply-card {
+  display: flex;
+  gap: 12px;
+  position: relative;
+}
+
+.x-thread-line {
+  position: absolute;
+  top: 40px;
+  left: 20px;
+  bottom: -16px;
+  width: 2px;
+  background-color: #333639;
+}
+
+.x-mockup-wrapper.light .x-thread-line {
+  background-color: #cfd9de;
+}
+
+.x-reply-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333639;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.x-reply-body {
+  flex: 1;
+}
+
+.x-reply-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14.5px;
+  margin-bottom: 3px;
+}
+
+.x-replying-to {
+  font-size: 13px;
+  color: #71767b;
+  margin-bottom: 4px;
+}
+
+.x-replying-to span {
+  color: #1d9bf0;
+}
+
+.x-reply-text {
+  font-size: 14.5px;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}

@@ -1,0 +1,207 @@
+/* Phone Bezel & Container Styling */
+.phone-mockup-outer {
+  width: 380px;
+  height: 800px;
+  max-height: calc(100vh - 200px);
+  aspect-ratio: 9 / 19;
+  position: relative;
+  background: #111318;
+  border-radius: 52px;
+  padding: 10px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 0 4px #2b303c,
+    0 25px 60px -15px rgba(0, 0, 0, 0.8),
+    0 0 50px rgba(99, 102, 241, 0.12);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, width 0.2s ease, height 0.2s ease;
+  user-select: none;
+}
+
+/* Glass reflection shine on screen border */
+.phone-mockup-outer::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border-radius: 44px;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 40;
+}
+
+/* Inner Screen Viewport - Target of html-to-image export */
+.phone-screen-inner {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  border-radius: 42px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Phone Status Bar (iOS Style) */
+.phone-status-bar {
+  height: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.status-bar-dark {
+  color: #000000;
+}
+
+.status-bar-time {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Dynamic Island */
+.dynamic-island {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 30px;
+  background: #000000;
+  border-radius: 20px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.island-camera-lens {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #080d1a;
+  border: 1px solid #141b2b;
+}
+
+.island-sensor {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0f1524;
+}
+
+/* Status Bar Icons (Right) */
+.status-bar-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.signal-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 11px;
+}
+
+.signal-bar {
+  width: 3px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.signal-bar-1 { height: 3px; }
+.signal-bar-2 { height: 5.5px; }
+.signal-bar-3 { height: 8px; }
+.signal-bar-4 { height: 11px; }
+
+.signal-bar.inactive {
+  opacity: 0.3;
+}
+
+.wifi-icon-svg {
+  width: 15px;
+  height: 15px;
+}
+
+.battery-pill {
+  width: 23px;
+  height: 11.5px;
+  border: 1px solid currentColor;
+  border-radius: 3.5px;
+  padding: 1.5px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.battery-pill::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 3px;
+  width: 1.5px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 0 1px 1px 0;
+}
+
+.battery-fill {
+  height: 100%;
+  background: currentColor;
+  border-radius: 1.5px;
+  transition: width 0.3s ease;
+}
+
+.battery-fill.low {
+  background: #ff453a !important;
+}
+
+.battery-fill.charging {
+  background: #30d158 !important;
+}
+
+/* Home Indicator Bar (iOS) */
+.phone-home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 135px;
+  height: 4.5px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.home-indicator-dark {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Mockup Content Scroll Area */
+.mockup-scroll-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
