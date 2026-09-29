@@ -1,22 +1,33 @@
 /* Phone Bezel, Models, & Realistic Reflections */
 .phone-mockup-outer {
+  --phone-font-ui: -apple-system, BlinkMacSystemFont, 'Inter', Arial, sans-serif;
+  --phone-font-display: -apple-system, BlinkMacSystemFont, 'Inter', Arial, sans-serif;
+  --phone-type-title: 17px;
+  --phone-type-message: 17px;
+  --phone-type-meta: 12px;
   width: 380px;
   height: 800px;
-  max-height: calc(100vh - 210px);
+  max-height: none;
   aspect-ratio: 9 / 19;
   position: relative;
   background: var(--bezel-color, #28292b);
   border-radius: var(--bezel-radius, 52px);
   padding: 10px;
-  box-shadow: 
+  box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.12),
     0 0 0 4px rgba(0, 0, 0, 0.4),
-    0 25px 60px -15px rgba(0, 0, 0, 0.8),
-    0 0 50px rgba(99, 102, 241, 0.12);
+    0 18px 45px -16px rgba(15, 36, 29, 0.5);
   display: flex;
   flex-direction: column;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+}
+
+.phone-mockup-outer.platform-android {
+  --phone-font-ui: 'Roboto', Arial, sans-serif;
+  --phone-font-display: 'Roboto', Arial, sans-serif;
+  --phone-type-title: 16px;
+  --phone-type-message: 14px;
+  --phone-type-meta: 12px;
 }
 
 /* Frameless Mode (Pure Screen Canvas) */
@@ -106,6 +117,10 @@
 
 /* Inner Screen Viewport - Target of html-to-image export */
 .phone-screen-inner {
+  font-family: var(--phone-font-ui);
+  font-kerning: normal;
+  font-variant-numeric: normal;
+  -webkit-font-smoothing: antialiased;
   flex: 1;
   width: 100%;
   height: 100%;
@@ -130,7 +145,7 @@
   left: 0;
   right: 0;
   z-index: 50;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-family: var(--phone-font-ui);
   color: #ffffff;
   pointer-events: none;
 }
@@ -140,10 +155,16 @@
 }
 
 .status-bar-time {
-  font-size: 14.5px;
+  font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
+
+.platform-android .phone-status-bar { height: 34px; min-height: 34px; padding-inline: 17px; }
+.platform-android .status-bar-time { font-size: 13px; font-weight: 500; letter-spacing: 0; }
+.status-bar-network { margin-right: 1px; font-size: 11px; font-weight: 700; letter-spacing: -.02em; }
+.platform-android .status-bar-network { font-size: 10px; font-weight: 600; }
 
 /* Dynamic Island (iPhone 15 / 16 Pro) */
 .dynamic-island {
@@ -260,6 +281,11 @@
   align-items: center;
   position: relative;
 }
+.battery-number { display: none; }
+.platform-ios .battery-pill.is-charging { width: 28px; height: 13px; padding: 0; border: 0; justify-content: center; background: #30d158; color: #fff; }
+.platform-ios .battery-pill.is-charging .battery-number { display: block; font-size: 10px; font-weight: 800; line-height: 1; }
+.platform-ios .battery-pill.is-charging .battery-fill { display: none; }
+.platform-ios .battery-pill.is-charging::after { background: #30d158; }
 
 .battery-pill::after {
   content: '';
@@ -276,7 +302,6 @@
   height: 100%;
   background: currentColor;
   border-radius: 1.5px;
-  transition: width 0.3s ease;
 }
 
 .battery-fill.low {
@@ -310,8 +335,31 @@
   flex: 1;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
 }
+
+.bare-phone, .phone-mockup-outer.model-frameless.bare-phone { padding: 0; box-shadow: none; background: transparent; border-radius: 0; }
+.bare-phone::before { display: none; }
+.bare-phone .phone-screen-inner { border-radius: 0; }
+.platform-ios .phone-status-bar { height: 48px; padding-inline: 26px; }
+.platform-ios .battery-pill.is-charging { height: 14px; width: 28px; }
+.platform-ios .battery-pill.is-charging .battery-number { font-size: 12px; }
+.scene-output, .composition-canvas { position: relative; flex-shrink: 0; overflow: hidden; }
+.output-crop { position: relative; overflow: hidden; }
+.output-source, .composition-part { position: absolute; }
+.phone-screen-inner:has(.scene-call), .phone-screen-inner:has(.full-media-screen) { background: #111; }
+.render-version-3.platform-android { --phone-type-message: 16px; }
+.render-version-3.model-iphone-16-pro .phone-status-bar { padding-inline: 47px 32px; }
+.render-version-3.model-iphone-16-pro .status-bar-time { font-size: 19px; }
+.render-version-3.platform-ios .signal-bars { height: 15px; gap: 2px; }
+.render-version-3.platform-ios .signal-bar { width: 3.5px; }
+.render-version-3.platform-ios .signal-bar-1 { height: 4px; }
+.render-version-3.platform-ios .signal-bar-2 { height: 8px; }
+.render-version-3.platform-ios .signal-bar-3 { height: 12px; }
+.render-version-3.platform-ios .signal-bar-4 { height: 15px; }
+.render-version-3.platform-ios .wifi-icon-svg { width: 20px; height: 20px; }
+.composition-part.selected { outline: 2px solid #07886c; outline-offset: -2px; }
+.composition-part[tabindex] { touch-action: none; cursor: move; }

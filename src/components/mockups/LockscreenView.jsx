@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Lock,
   Flashlight,
@@ -15,22 +14,25 @@ export default function LockscreenView({ slide }) {
   const content = slide.content || {};
   const notifications = content.notifications || [];
   const globalSettings = project.globalSettings || {};
+  const english = (slide.customSettings?.locale || globalSettings.locale) === 'en';
   const time = slide.customSettings?.time || globalSettings.time || "23:45";
-  const dateString = content.dateString || "Jumat, 26 September";
-  const wallpaperUrl = content.wallpaperUrl || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80";
-  const fontStyle = globalSettings.lockscreenFont || 'bold';
-  const music = globalSettings.lockscreenMusic || {};
+  const dateString = content.dateString || (english ? "Friday, 26 September" : "Jumat, 26 September");
+  const wallpaperUrl = content.wallpaperUrl;
+  const fontStyle = slide.customSettings?.lockscreenFont || globalSettings.lockscreenFont || 'bold';
+  const music = content.music || globalSettings.lockscreenMusic || {};
+  const model = String(slide.customSettings?.phoneModel || globalSettings.phoneModel || '');
 
   return (
     <div
-      className="lockscreen-wrapper"
-      style={{ backgroundImage: `url(${wallpaperUrl})` }}
+      className={`lockscreen-wrapper ${model.startsWith('samsung') ? 'android-lockscreen' : ''}`}
+      style={{ backgroundImage: wallpaperUrl ? `url(${wallpaperUrl})` : undefined,
+        backgroundColor: content.backgroundColor || '#455c69' }}
     >
       <div className="lockscreen-overlay" />
 
       <div className="lockscreen-content">
         {/* Center Clock & Date Header */}
-        <div className="lockscreen-header-center">
+        <div className="lockscreen-header-center" data-edit-target="lock-clock">
           <div className="lockscreen-padlock">
             <Lock size={15} strokeWidth={2.5} />
           </div>
@@ -40,7 +42,7 @@ export default function LockscreenView({ slide }) {
 
         {/* Lockscreen Music Player Widget (Spotify / Apple Music) */}
         {music.enabled && (
-          <div className="lockscreen-music-widget">
+          <div className="lockscreen-music-widget" data-edit-target="lock-music">
             <div className="music-widget-top">
               <img
                 src={music.albumArt || "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80"}
@@ -55,7 +57,7 @@ export default function LockscreenView({ slide }) {
 
             <div className="music-widget-progress-bar">
               <div className="music-progress-track">
-                <div className="music-progress-fill" />
+                <div className="music-progress-fill" style={{ width: `${Math.max(0, Math.min(100, Number(music.progressPercent ?? 38)))}%` }} />
               </div>
               <div className="music-widget-times">
                 <span>{music.progress || "1:24"}</span>
@@ -76,7 +78,7 @@ export default function LockscreenView({ slide }) {
           {notifications.map((notif) => {
             const app = notif.app || 'whatsapp';
             return (
-              <div key={notif.id} className="lockscreen-notif-card">
+              <div key={notif.id} className="lockscreen-notif-card" data-edit-target={`notification:${notif.id}`}>
                 <div className="lockscreen-notif-header">
                   <div className="lockscreen-app-badge">
                     <div className={`lockscreen-app-icon ${app}`}>
@@ -95,9 +97,9 @@ export default function LockscreenView({ slide }) {
                       )}
                       {app === 'messages' && <MessageSquare size={11} />}
                     </div>
-                    <span>{app}</span>
+                    <span>{app === 'custom' ? (notif.appName || (english ? 'App' : 'Aplikasi')) : app === 'twitter' ? 'X' : app}</span>
                   </div>
-                  <span>{notif.time || "2m ago"}</span>
+                  <span>{notif.time || (english || slide.renderVersion === 2 ? "2m ago" : "2 mnt lalu")}</span>
                 </div>
 
                 <div className="lockscreen-notif-title">{notif.title}</div>

@@ -1,14 +1,13 @@
-import React from 'react';
-import { ArrowLeft, MessageCircle, Repeat2, Heart, Bookmark, Share } from 'lucide-react';
+import { ArrowLeft, Bookmark, Heart, Image, MessageCircle, MoreHorizontal, Plus, Repeat2, Send, Share } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 
-export default function TwitterView({ slide, isDm = false }) {
+export default function TwitterView({ slide, isDm = false, isThread = false }) {
   const { project, getCharacter } = useProject();
   const content = slide.content || {};
   const author = getCharacter(content.authorId);
   const theme = slide.customSettings?.theme || project.globalSettings.theme || 'dark';
 
-  // Format hashtags and mentions in Twitter Blue
+  // Highlight hashtags and mentions in posts.
   const renderFormattedText = (text = '') => {
     const parts = text.split(/([#@][\w_]+)/g);
     return parts.map((part, i) => {
@@ -23,18 +22,39 @@ export default function TwitterView({ slide, isDm = false }) {
   const quoteAuthor = quoteTweet.enabled ? getCharacter(quoteTweet.authorId) : null;
   const poll = content.poll || {};
 
+  if (isDm) {
+    const target = getCharacter(content.targetCharacterId);
+    return <div className={`x-mockup-wrapper x-dm-wrapper x-chat-wrapper ${theme}`}>
+      <div className="x-header x-chat-header" data-edit-target="chat-header">
+        <ArrowLeft size={20} strokeWidth={2} /><span className="x-chat-heading"><strong>{target.name}</strong><small>{target.handle}</small></span>
+        <MoreHorizontal size={21} strokeWidth={2} />
+      </div>
+      <div className="x-dm-conversation" data-edit-target="messages">
+        <div className="x-dm-intro"><img src={target.avatar} alt="" /><strong>{target.name}</strong><span>{target.handle}</span><small>Chat di X</small></div>
+        {(content.messages || []).map(message => <div key={message.id} className={`x-dm-message ${message.senderId === 'me' ? 'mine' : ''}`}
+          data-edit-target={`message:${message.id}`}>
+          {message.mediaUrl && <img className="x-dm-media" src={message.mediaUrl} alt="Lampiran pesan" />}
+          {message.text && <span>{message.text}</span>}
+          <small>{message.time || ''}{message.senderId === 'me' && message.status === 'read' ? ' · Dilihat' : ''}</small>
+          {!!message.reactions?.length && <em>{message.reactions.join(' ')}</em>}
+        </div>)}
+      </div>
+      <div className="x-dm-compose" aria-hidden="true"><Plus size={21} /><Image size={19} /><span>Mulai pesan</span><Send size={18} /></div>
+    </div>;
+  }
+
   return (
     <div className={`x-mockup-wrapper ${theme}`}>
-      {/* Twitter Header */}
+      {/* Post header */}
       <div className="x-header">
         <ArrowLeft size={20} strokeWidth={2.2} />
-        <span className="x-header-title">Postingan</span>
+        <span className="x-header-title">{isThread ? 'Utas' : 'Postingan'}</span>
         <div style={{ width: 20 }} />
       </div>
 
       <div className="x-content-scroll">
         {/* Main Post */}
-        <div className="x-post-main">
+        <div className="x-post-main" data-edit-target="post">
           {/* Author Meta */}
           <div className="x-author-row">
             <div className="x-author-meta">
@@ -71,13 +91,8 @@ export default function TwitterView({ slide, isDm = false }) {
           </div>
 
           {/* Post Text */}
-          <div className="x-post-text">
+          <div className="x-post-text" data-edit-target="post-text">
             {renderFormattedText(content.text)}
-          </div>
-
-          {/* Translate link */}
-          <div className="x-translate-link">
-            Terjemahkan postingan
           </div>
 
           {/* Quoted Tweet Box (Retweet with comment) */}
@@ -94,7 +109,7 @@ export default function TwitterView({ slide, isDm = false }) {
             </div>
           )}
 
-          {/* Twitter Poll Mockup */}
+          {/* Poll */}
           {poll.enabled && poll.options && (
             <div className="x-poll-container">
               {poll.options.map((opt, oIdx) => (
@@ -118,8 +133,7 @@ export default function TwitterView({ slide, isDm = false }) {
           {/* Timestamp and Device */}
           <div className="x-meta-footer">
             <span>{content.timestamp || "11:45 PM · 26 Sep 26"}</span>
-            <span>·</span>
-            <span className="x-meta-device">{content.client || "Twitter for iPhone"}</span>
+            {content.client && <><span>·</span><span className="x-meta-device">{content.client}</span></>}
             {content.viewsCount && (
               <>
                 <span>·</span>
@@ -156,7 +170,7 @@ export default function TwitterView({ slide, isDm = false }) {
 
         {/* Reply Chain / Thread */}
         {content.replies && content.replies.length > 0 && (
-          <div className="x-reply-chain">
+          <div className="x-reply-chain" data-edit-target="replies">
             {content.replies.map((rep) => {
               const repAuthor = getCharacter(rep.authorId);
               return (
@@ -169,15 +183,16 @@ export default function TwitterView({ slide, isDm = false }) {
                       <span className="x-handle">{repAuthor.handle}</span>
                       <span className="x-handle">· {rep.timestamp || "1m"}</span>
                     </div>
-                    <div className="x-replying-to">
+                  {!isThread && <div className="x-replying-to">
                       Membalas <span>{author.handle}</span>
-                    </div>
-                    <div className="x-reply-text">
+                    </div>}
+                  <div className="x-reply-text">
                       {renderFormattedText(rep.text)}
                     </div>
+                    {rep.mediaUrl && <img className="x-media-img x-reply-media" src={rep.mediaUrl} alt="Media utas" />}
                     <div style={{ display: 'flex', gap: 18, color: '#71767b', fontSize: 12, marginTop: 4 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MessageCircle size={14} /> 2</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Repeat2 size={14} /> 1</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MessageCircle size={14} /> {rep.repliesCount || '0'}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Repeat2 size={14} /> {rep.retweetsCount || '0'}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Heart size={14} /> {rep.likesCount || "5"}</span>
                     </div>
                   </div>

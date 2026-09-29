@@ -1,222 +1,131 @@
-import React, { useState } from 'react';
-import { X, Image, Upload, Check, Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 import { AESTHETIC_AVATARS, AESTHETIC_WALLPAPERS } from '../../data/samplePresets';
+import { useProject } from '../../context/ProjectContext';
+import StickerEditor from './StickerEditor';
+
+const STICKERS = [
+  { id: 'builtin-heart', name: 'Hati', url: `${import.meta.env.BASE_URL}stickers/heart.svg` },
+  { id: 'builtin-star', name: 'Bintang', url: `${import.meta.env.BASE_URL}stickers/star.svg` },
+  { id: 'builtin-wave', name: 'Sapaan', url: `${import.meta.env.BASE_URL}stickers/wave.svg` }
+];
+
+export function useDialogFocus(dialog, onClose, open = true) {
+  const close = useRef(onClose); close.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const before = document.activeElement;
+    dialog.current?.querySelector('button,input,select,textarea')?.focus();
+    const key = event => {
+      if (event.key === 'Escape') { event.stopPropagation(); close.current(); }
+      if (event.key !== 'Tab' || !dialog.current) return;
+      const focusable = [...dialog.current.querySelectorAll('button:not(:disabled),input,select,textarea')].filter(node => node.offsetParent !== null);
+      const first = focusable[0], last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('keydown', key); before?.focus(); };
+  }, [dialog, open]);
+}
 
 export default function AssetPickerModal({ isOpen, onClose, onSelect, type = 'avatar', currentUrl = '' }) {
-  const [activeTab, setActiveTab] = useState('gallery'); // 'gallery' | 'upload' | 'url'
-  const [inputUrl, setInputUrl] = useState('');
-  const [filterTag, setFilterTag] = useState('Semua');
-
+  const [tab, setTab] = useState('upload');
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState('');
+  const { project, setProject } = useProject();
+  const dialog = useRef(null);
+  useDialogFocus(dialog, onClose, isOpen);
+  useEffect(() => {
+    if (!isOpen) return;
+    setError(''); setEditing('');
+  }, [isOpen]);
+  useEffect(() => { if (isOpen) setTab(type === 'sticker' ? 'gallery' : 'upload'); }, [isOpen, type]);
   if (!isOpen) return null;
 
-  const handleUploadFile = (e) => {
-    const file = e.target.files?.[0];
+  const chooseFile = async event => {
+    const file = event.target.files?.[0];
     if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 20 * 1024 * 1024) {
+      setError('Pilih JPG, PNG, WebP, atau GIF berukuran maksimal 20 MB.'); return;
+    }
     const reader = new FileReader();
-    reader.onload = (uploadEvt) => {
-      onSelect(uploadEvt.target.result);
-      onClose();
-    };
+    reader.onload = () => type === 'sticker' ? setEditing(reader.result) : finish(reader.result);
+    reader.onerror = () => setError('Gambar gagal dibaca. Coba berkas lain.');
     reader.readAsDataURL(file);
   };
-
-  const handleApplyUrl = () => {
-    if (!inputUrl.trim()) return;
-    onSelect(inputUrl.trim());
-    onClose();
+  const chooseUrl = async () => {
+    setError('');
+    let parsed;
+    try { parsed = new URL(url.trim()); }
+    catch { setError('Masukkan alamat gambar yang valid.'); return; }
+    if (!['http:', 'https:'].includes(parsed.protocol)) { setError('Gunakan tautan HTTPS atau HTTP.'); return; }
+    setBusy(true);
+    try {
+      const response = await fetch(parsed.href, { mode: 'cors' });
+      if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) throw new Error();
+      const blob = await response.blob();
+      if (blob.size > 20 * 1024 * 1024) throw new Error();
+      const data = await toData(blob);
+      if (type === 'sticker') setEditing(data); else await finish(data);
+    } catch {
+      setError('Tautan ini tidak bisa dipakai untuk ekspor. Unduh gambar lalu unggah berkasnya.');
+    } finally { setBusy(false); }
   };
+  const chooseSample = async item => {
+    setBusy(true);
+    try {
+      const blob = await (await fetch(item.url)).blob();
+      await finish(await toData(blob));
+    } catch { setError('Stiker gagal dimuat. Coba unggah gambar sendiri.'); }
+    finally { setBusy(false); }
+  };
+  const toData = blob => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); });
+  const finish = async source => {
+    try {
+      // Freeze GIFs to a portable static poster; animation is never part of an exported scene.
+      if (/^data:image\/gif/.test(source)) {
+        const image = new Image(); image.src = source; await image.decode();
+        const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+        canvas.getContext('2d').drawImage(image, 0, 0); source = canvas.toDataURL('image/png');
+      }
+      onSelect(source); onClose();
+    } catch { setError('Gambar gagal dibaca. Coba unggah berkas lain.'); }
+  };
+  const samples = type === 'sticker' ? [...(project?.stickerLibrary || []), ...STICKERS] : type === 'avatar' ? AESTHETIC_AVATARS : AESTHETIC_WALLPAPERS;
 
-  const isAvatar = type === 'avatar';
-  const galleryItems = isAvatar ? AESTHETIC_AVATARS : AESTHETIC_WALLPAPERS;
-
-  const filteredItems = isAvatar && filterTag !== 'Semua'
-    ? galleryItems.filter(item => item.tag === filterTag)
-    : galleryItems;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="modal-title">
-            <Sparkles size={18} color="#a855f7" />
-            <span>{isAvatar ? 'Pilih Foto Avatar Karakter' : 'Pilih Wallpaper Estetik'}</span>
-          </div>
-          <button className="btn-header" onClick={onClose} style={{ padding: '4px' }}>
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Tab Selector */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)' }}>
-          <button
-            className={`sidebar-tab-btn ${activeTab === 'gallery' ? 'active' : ''}`}
-            onClick={() => setActiveTab('gallery')}
-            style={{ padding: '10px 16px', flexDirection: 'row', gap: '6px' }}
-          >
-            <Image size={15} />
-            <span>Katalog Siap Pakai</span>
-          </button>
-          <button
-            className={`sidebar-tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upload')}
-            style={{ padding: '10px 16px', flexDirection: 'row', gap: '6px' }}
-          >
-            <Upload size={15} />
-            <span>Unggah dari HP/Laptop</span>
-          </button>
-          <button
-            className={`sidebar-tab-btn ${activeTab === 'url' ? 'active' : ''}`}
-            onClick={() => setActiveTab('url')}
-            style={{ padding: '10px 16px', flexDirection: 'row', gap: '6px' }}
-          >
-            <span>Tautan URL</span>
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="modal-body" style={{ maxHeight: '420px', overflowY: 'auto' }}>
-          {activeTab === 'gallery' && (
-            <>
-              {isAvatar && (
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                  {['Semua', 'Cowok', 'Cewek', 'Aesthetic'].map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      className="btn-header"
-                      style={{
-                        padding: '4px 10px',
-                        fontSize: '11px',
-                        background: filterTag === tag ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                        color: filterTag === tag ? '#ffffff' : 'var(--text-secondary)'
-                      }}
-                      onClick={() => setFilterTag(tag)}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isAvatar ? 'repeat(auto-fill, minmax(105px, 1fr))' : 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: '12px'
-              }}>
-                {filteredItems.map((item) => {
-                  const isSelected = currentUrl === item.url;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        onSelect(item.url);
-                        onClose();
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
-                        position: 'relative',
-                        border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--border-medium)',
-                        aspectRatio: isAvatar ? '1 / 1' : '9 / 16',
-                        background: '#1a1e29',
-                        transition: 'transform 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      <img
-                        src={item.url}
-                        alt={item.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
-                        padding: '4px 6px',
-                        fontSize: '10px',
-                        color: 'white',
-                        textAlign: 'center',
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {item.name}
-                      </div>
-                      {isSelected && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '6px',
-                          right: '6px',
-                          background: 'var(--accent-primary)',
-                          borderRadius: '50%',
-                          width: '20px',
-                          height: '20px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white'
-                        }}>
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          {activeTab === 'upload' && (
-            <label style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              padding: '48px 24px',
-              border: '2px dashed var(--border-medium)',
-              borderRadius: '16px',
-              background: 'var(--bg-tertiary)',
-              cursor: 'pointer',
-              textAlign: 'center'
-            }}>
-              <Upload size={32} color="var(--accent-primary)" />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>Klik untuk memilih foto</span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Mendukung format JPG, PNG, atau WebP</span>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleUploadFile}
-              />
-            </label>
-          )}
-
-          {activeTab === 'url' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label className="form-label">Tautan Gambar (URL Langsung)</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="https://images.unsplash.com/..."
-                value={inputUrl}
-                onChange={(e) => setInputUrl(e.target.value)}
-              />
-              <button className="btn-header primary" onClick={handleApplyUrl} style={{ alignSelf: 'flex-end' }}>
-                Terapkan Foto
-              </button>
-            </div>
-          )}
-        </div>
+  return createPortal(<div className="dialog-backdrop no-export" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <section ref={dialog} className="asset-dialog" role="dialog" aria-modal="true" aria-labelledby="asset-title">
+      <div className="dialog-heading"><div><h2 id="asset-title">Pilih gambar</h2><p>Gambar yang diunggah tersimpan bersama proyek di browser ini.</p></div>
+        <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={19} /></button></div>
+      {editing ? <StickerEditor source={editing} onCancel={() => setEditing('')} onSave={sticker => {
+        setProject(previous => ({ ...previous, stickerLibrary: [...(previous.stickerLibrary || []), sticker] })); finish(sticker.url);
+      }} /> : <><div className="asset-tabs">
+        <button className={tab === 'upload' ? 'active' : ''} onClick={() => setTab('upload')}>Unggah</button>
+        <button className={tab === 'gallery' ? 'active' : ''} onClick={() => setTab('gallery')}>{type === 'sticker' ? 'Koleksi dan contoh' : 'Contoh gambar'}</button>
+        <button className={tab === 'url' ? 'active' : ''} onClick={() => setTab('url')}>Tautan</button>
       </div>
-    </div>
-  );
+      <div className="asset-body">
+        {tab === 'upload' && <label className="upload-drop"><strong>Pilih gambar dari HP atau laptop</strong><span>JPG, PNG, WebP, GIF diam · maksimal 20 MB</span>
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={chooseFile} /></label>}
+        {tab === 'gallery' && <div className="asset-grid">{samples.map(item => <div className="asset-item" key={item.id}>
+          <button disabled={busy} className={currentUrl === item.url ? 'active' : ''} onClick={() => chooseSample(item)}><img src={item.url} alt="" /><span>{item.name}</span></button>
+          {type === 'sticker' && project?.stickerLibrary?.some(sticker => sticker.id === item.id) && <div className="asset-item-tools">
+            <button onClick={() => setEditing(item.url)} aria-label={`Edit stiker ${item.name}`}>Edit</button>
+            <button onClick={() => setProject(previous => ({ ...previous, stickerLibrary: previous.stickerLibrary.filter(sticker => sticker.id !== item.id) }))} aria-label={`Hapus stiker ${item.name}`}>Hapus</button>
+          </div>}
+        </div>)}</div>}
+        {tab === 'url' && <div className="url-input"><label className="field"><span>Alamat gambar langsung</span><input type="url" value={url}
+          placeholder="https://contoh.com/gambar.jpg" onChange={event => setUrl(event.target.value)} /></label>
+          <button className="button primary" disabled={busy} onClick={chooseUrl}>{busy ? 'Memeriksa…' : 'Gunakan tautan'}</button></div>}
+        {error && <p className="inline-error" role="alert">{error}</p>}
+        {type === 'sticker' && currentUrl && <button className="button secondary" onClick={async () => {
+          try { setEditing(await toData(await (await fetch(currentUrl)).blob())); } catch { setError('Unggah stiker sebagai berkas untuk mengeditnya.'); }
+        }}>Edit stiker saat ini</button>}
+      </div></>}
+    </section>
+  </div>, document.body);
 }

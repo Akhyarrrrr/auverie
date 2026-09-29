@@ -1,105 +1,60 @@
-// Quick Script-to-Chat Converter with Smart Auto-Paging
-
 export function parseChatScript(scriptText, existingCharacters = [], options = {}) {
-  const {
-    messagesPerSlide = 5,
-    platformType = "wa_chat",
-    defaultTargetCharId = null
-  } = options;
+  const { platformType = 'wa_chat', startTime = '23:40' } = options;
+  const lines = scriptText.split(/\r?\n/);
+  const messages = [];
+  const newCharacters = [];
+  const invalidLines = [];
+  let minute = /^(\d{1,2}):(\d{2})$/.test(startTime)
+    ? Number(startTime.split(':')[0]) * 60 + Number(startTime.split(':')[1]) : 23 * 60 + 40;
 
-  const lines = scriptText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const parsedMessages = [];
-  const newlyDiscoveredCharacters = [];
-
-  let currentTimeMinute = 40;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    
-    // Check format: "Name: message text"
+  lines.forEach((raw, index) => {
+    const line = raw.trim();
+    if (!line) return;
     const match = line.match(/^([^:]+):\s*(.+)$/);
-    if (!match) continue;
-
-    const rawSpeaker = match[1].trim();
-    const rawText = match[2].trim();
-
-    // Determine sender ID
-    let senderId = "me";
-    const lowerSpeaker = rawSpeaker.toLowerCase();
-
-    if (lowerSpeaker === "me" || lowerSpeaker === "aku" || lowerSpeaker === "saya") {
-      senderId = "me";
-    } else {
-      // Find in existing characters
-      const found = existingCharacters.find(
-        c => c.name.toLowerCase() === lowerSpeaker || c.handle.toLowerCase() === lowerSpeaker || c.handle.toLowerCase() === `@${lowerSpeaker}`
-      );
-
-      if (found) {
-        senderId = found.id;
-      } else {
-        // Find if already discovered in this script
-        let discovered = newlyDiscoveredCharacters.find(c => c.name.toLowerCase() === lowerSpeaker);
-        if (!discovered) {
-          const cleanHandle = lowerSpeaker.replace(/\s+/g, '');
-          discovered = {
-            id: `char-${Date.now()}-${newlyDiscoveredCharacters.length}`,
-            name: rawSpeaker,
-            handle: `@${cleanHandle}`,
-            avatar: `https://api.dicebear.com/7.x/notionists/svg?seed=${cleanHandle}`,
-            verified: false
-          };
-          newlyDiscoveredCharacters.push(discovered);
-        }
-        senderId = discovered.id;
+    if (!match) { invalidLines.push({ line: index + 1, text: line }); return; }
+    const speaker = match[1].trim();
+    const value = match[2].trim();
+    if (!speaker || !value) { invalidLines.push({ line: index + 1, text: line }); return; }
+    const name = speaker.toLocaleLowerCase();
+    let senderId = 'me';
+    if (!['aku', 'saya', 'me'].includes(name)) {
+      let character = [...existingCharacters, ...newCharacters].find(item =>
+        item.name.toLocaleLowerCase() === name || item.handle.toLocaleLowerCase().replace(/^@/, '') === name.replace(/^@/, ''));
+      if (!character) {
+        character = { id: crypto.randomUUID(), name: speaker, handle: '@' + name.replace(/\W+/g, ''),
+          avatar: existingCharacters[0]?.avatar || '', verified: false };
+        newCharacters.push(character);
       }
+      senderId = character.id;
     }
+    const voice = value.match(/^\[vn:(\d{1,2}:\d{2})\]$/i);
+    const time = String(Math.floor((minute % 1440) / 60)).padStart(2, '0') + ':' + String(minute % 60).padStart(2, '0');
+    messages.push({ id: crypto.randomUUID(), senderId, text: voice && platformType.startsWith('wa_') ? '' : value, time,
+      status: 'read', isVoiceNote: !!voice && platformType.startsWith('wa_'), voiceDuration: voice?.[1] });
+    minute++;
+  });
+  const other = messages.find(item => item.senderId !== 'me');
+  return { messages, newCharacters, invalidLines, targetCharacterId: other?.senderId || existingCharacters[0]?.id || null };
+}
 
-    // Voice note check: [vn:0:24]
-    const vnMatch = rawText.match(/^\[vn:?(\d+:\d+)?\]$/i);
-    const isVoiceNote = !!vnMatch;
-    const voiceDuration = vnMatch && vnMatch[1] ? vnMatch[1] : "0:24";
-
-    // Format minute time string
-    const timeStr = `23:${String(currentTimeMinute).padStart(2, '0')}`;
-    if (i % 2 === 1) currentTimeMinute++;
-
-    parsedMessages.push({
-      id: `m-script-${Date.now()}-${i}`,
-      senderId,
-      text: isVoiceNote ? "" : rawText,
-      time: timeStr,
-      status: "read",
-      isVoiceNote,
-      voiceDuration
-    });
-  }
-
-  // Determine main target character for 1-on-1 chats
-  const otherChar = parsedMessages.find(m => m.senderId !== "me");
-  const targetCharacterId = otherChar ? otherChar.senderId : (defaultTargetCharId || (existingCharacters[0]?.id || "char-reyhan"));
-
-  // Auto-Paging: Chunk messages into slides of max `messagesPerSlide`
-  const slides = [];
-  for (let i = 0; i < parsedMessages.length; i += messagesPerSlide) {
-    const chunk = parsedMessages.slice(i, i + messagesPerSlide);
-    const slideNumber = Math.floor(i / messagesPerSlide) + 1;
-    
-    slides.push({
-      id: `slide-script-${Date.now()}-${slideNumber}`,
-      order: slideNumber,
-      type: platformType,
-      title: `Chat Part ${slideNumber}`,
-      content: {
-        targetCharacterId,
-        statusText: "online",
-        messages: chunk
-      }
-    });
-  }
-
-  return {
-    slides,
-    newCharacters: newlyDiscoveredCharacters
-  };
+// Heights come from the rendered phone preview, not an estimated character count.
+export function paginateByHeight(messages, heights, availableHeight) {
+  if (messages.length !== heights.length || availableHeight <= 0) throw new Error('Ukuran pratinjau belum siap.');
+  const pages = [];
+  const oversized = [];
+  let page = [];
+  let used = 0;
+  messages.forEach((message, index) => {
+    const height = heights[index];
+    if (height > availableHeight) oversized.push(index + 1);
+    if (page.length && used + height > availableHeight) {
+      pages.push(page);
+      page = [];
+      used = 0;
+    }
+    page.push(message);
+    used += height;
+  });
+  if (page.length) pages.push(page);
+  return { pages, oversized };
 }

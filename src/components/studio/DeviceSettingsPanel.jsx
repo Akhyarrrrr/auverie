@@ -1,172 +1,44 @@
-import React from 'react';
-import { Smartphone, Clock, Battery, Wifi, Sun, Moon, Zap, Music } from 'lucide-react';
+import { PHONE_MODELS } from '../../data/samplePresets';
 import { useProject } from '../../context/ProjectContext';
-import PhoneModelSelector from './PhoneModelSelector';
 
 export default function DeviceSettingsPanel() {
-  const { project, updateGlobalSettings } = useProject();
-  const settings = project.globalSettings || {};
+  const { project, activeSlide, updateGlobalSettings } = useProject();
+  const settings = { ...project.globalSettings, ...activeSlide?.customSettings };
+  const model = PHONE_MODELS.find(item => item.id === settings.phoneModel) || PHONE_MODELS[0];
+  const update = (key, value) => updateGlobalSettings({ [key]: value });
 
-  const timePresets = ["23:45", "01:24", "07:15", "14:30", "19:00"];
-
-  return (
-    <div className="sidebar-content">
-      {/* 1. Model HP & Bezel Selection */}
-      <PhoneModelSelector />
-
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '4px 0' }} />
-
-      {/* 2. Theme Toggle */}
-      <div className="form-group">
-        <label className="form-label">
-          <span>Mode Gelap / Terang</span>
-        </label>
-        <div className="segmented-control">
-          <button
-            type="button"
-            className={`segmented-item ${settings.theme === 'dark' ? 'active' : ''}`}
-            onClick={() => updateGlobalSettings({ theme: 'dark' })}
-          >
-            <Moon size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
-            Gelap (Dark)
-          </button>
-          <button
-            type="button"
-            className={`segmented-item ${settings.theme === 'light' ? 'active' : ''}`}
-            onClick={() => updateGlobalSettings({ theme: 'light' })}
-          >
-            <Sun size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />
-            Terang (Light)
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Clock Time & Presets */}
-      <div className="form-group">
-        <label className="form-label">
-          <span><Clock size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} /> Jam HP</span>
-        </label>
-        <input
-          type="text"
-          className="form-input"
-          value={settings.time || "23:45"}
-          onChange={(e) => updateGlobalSettings({ time: e.target.value })}
-          placeholder="23:45"
-        />
-        <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-          {timePresets.map(t => (
-            <button
-              key={t}
-              type="button"
-              className="btn-header"
-              style={{
-                padding: '2px 7px',
-                fontSize: '11px',
-                background: settings.time === t ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                color: settings.time === t ? '#ffffff' : 'var(--text-secondary)'
-              }}
-              onClick={() => updateGlobalSettings({ time: t })}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. Battery Level & Charging */}
-      <div className="form-group">
-        <div className="form-label">
-          <span><Battery size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} /> Baterai HP: <b>{settings.batteryLevel}%</b></span>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '11px' }}>
-            <input
-              type="checkbox"
-              checked={settings.isCharging || false}
-              onChange={(e) => updateGlobalSettings({ isCharging: e.target.checked })}
-            />
-            <Zap size={12} color="#10b981" /> Charging
-          </label>
-        </div>
-        <input
-          type="range"
-          min="1"
-          max="100"
-          value={settings.batteryLevel || 50}
-          onChange={(e) => updateGlobalSettings({ batteryLevel: parseInt(e.target.value, 10) })}
-          style={{ width: '100%', accentColor: 'var(--accent-primary)', cursor: 'pointer' }}
-        />
-      </div>
-
-      {/* 5. Network Type & Signal */}
-      <div className="form-group">
-        <label className="form-label">
-          <span><Wifi size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} /> Jaringan & Operator</span>
-        </label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <select
-            className="form-select"
-            value={settings.networkType || "5G"}
-            onChange={(e) => updateGlobalSettings({ networkType: e.target.value })}
-          >
-            <option value="5G">5G</option>
-            <option value="WiFi">WiFi</option>
-            <option value="4G">4G</option>
-            <option value="LTE">LTE</option>
-          </select>
-
-          <input
-            type="text"
-            className="form-input"
-            value={settings.carrier || "Telkomsel"}
-            onChange={(e) => updateGlobalSettings({ carrier: e.target.value })}
-            placeholder="Telkomsel, Indosat..."
-          />
-        </div>
-      </div>
-
-      {/* 6. Lockscreen Music Widget Toggle */}
-      <div className="form-group">
-        <div className="form-label">
-          <span><Music size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} /> Widget Musik di Layar Kunci</span>
-          <input
-            type="checkbox"
-            checked={settings.lockscreenMusic?.enabled !== false}
-            onChange={(e) => updateGlobalSettings({
-              lockscreenMusic: {
-                ...settings.lockscreenMusic,
-                enabled: e.target.checked
-              }
-            })}
-          />
-        </div>
-        {settings.lockscreenMusic?.enabled !== false && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <input
-              type="text"
-              className="form-input"
-              value={settings.lockscreenMusic?.title || "Penjaga Hati"}
-              onChange={(e) => updateGlobalSettings({
-                lockscreenMusic: {
-                  ...settings.lockscreenMusic,
-                  title: e.target.value
-                }
-              })}
-              placeholder="Judul Lagu"
-            />
-            <input
-              type="text"
-              className="form-input"
-              value={settings.lockscreenMusic?.artist || "Nadhif Basalamah"}
-              onChange={(e) => updateGlobalSettings({
-                lockscreenMusic: {
-                  ...settings.lockscreenMusic,
-                  artist: e.target.value
-                }
-              })}
-              placeholder="Nama Penyanyi / Artis"
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <div className="sidebar-content device-settings">
+    <div className="panel-intro"><h2>Tampilan HP</h2><p>Ubah HP adegan aktif dan bawaan adegan baru. Adegan lain mempertahankan tampilan yang sudah disimpan.</p></div>
+    <section className="settings-section"><h3>Perangkat</h3>
+      <div className="model-grid">{PHONE_MODELS.map(item => <button key={item.id}
+        className={item.id === settings.phoneModel ? 'model-choice active' : 'model-choice'}
+        onClick={() => updateGlobalSettings({ phoneModel: item.id, bezelColor: item.colors[0].code, os: item.brand === 'Samsung' ? 'android' : 'ios' })}>
+        <strong>{item.name}</strong><span>{item.brand === 'Canvas' ? 'Tanpa bingkai' : item.brand}</span>
+      </button>)}</div>
+      {model.colors.length > 1 && <div className="field"><span>Warna bingkai</span>
+        <div className="color-options">{model.colors.map(color => <button key={color.id} className={settings.bezelColor === color.code ? 'active' : ''}
+          style={{ backgroundColor: color.code }} title={color.name} aria-label={color.name}
+          aria-pressed={settings.bezelColor === color.code} onClick={() => update('bezelColor', color.code)} />)}</div></div>}
+      {model.id === 'frameless' && <label className="field"><span>Sistem operasi layar</span>
+        <select value={settings.os || 'ios'} onChange={event => update('os', event.target.value)}><option value="ios">iOS</option><option value="android">Android</option></select>
+      </label>}
+    </section>
+    <section className="settings-section"><h3>Isi layar</h3>
+      <label className="toggle-field"><span>Sembunyikan status bar</span><input type="checkbox" checked={!!settings.hideStatusBar} onChange={event => update('hideStatusBar', event.target.checked)} /></label>
+      <label className="field"><span>Tema aplikasi</span><select value={settings.theme || 'dark'} onChange={event => update('theme', event.target.value)}>
+        <option value="light">Terang</option><option value="dark">Gelap</option></select></label>
+      <label className="field"><span>Jam di status bar</span><input type="time" value={settings.time || '23:45'} onChange={event => update('time', event.target.value)} /></label>
+      <label className="field"><span>Baterai · {settings.batteryLevel}%</span><input type="range" min="1" max="100" value={settings.batteryLevel ?? 80}
+        onChange={event => update('batteryLevel', Number(event.target.value))} /></label>
+      <label className="toggle-field"><span>Sedang mengisi daya</span><input type="checkbox" checked={!!settings.isCharging}
+        onChange={event => update('isCharging', event.target.checked)} /></label>
+      <label className="field"><span>Jaringan</span><select value={settings.networkType || '5G'} onChange={event => update('networkType', event.target.value)}>
+        <option value="WiFi">Wi-Fi</option><option value="5G">5G</option><option value="4G">4G</option><option value="LTE">LTE</option></select></label>
+      <label className="field"><span>Kekuatan sinyal · {settings.signalBars || 4} bar</span><input type="range" min="1" max="4" value={settings.signalBars || 4}
+        onChange={event => update('signalBars', Number(event.target.value))} /></label>
+      {model.brand === 'Apple' && <label className="field"><span>Gaya jam layar kunci</span>
+        <select value={settings.lockscreenFont || 'bold'} onChange={event => update('lockscreenFont', event.target.value)}>
+          <option value="bold">Tebal</option><option value="serif">Serif</option><option value="modern">Modern</option></select></label>}
+    </section>
+  </div>;
 }

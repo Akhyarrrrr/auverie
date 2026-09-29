@@ -1,0 +1,46 @@
+.custom-app-screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  font-family: var(--phone-font-ui);
+}
+
+.custom-empty {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 43%;
+  padding: 18px;
+  border: 1px dashed #b4c6bf;
+  border-radius: 10px;
+  color: #52645e;
+  background: #ffffffd9;
+  font-size: 14px;
+  text-align: center;
+}
+
+.custom-block {
+  position: absolute;
+  min-width: 18px;
+  padding: 8px 10px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  line-height: 1.35;
+  touch-action: none;
+  cursor: grab;
+}
+.custom-block:active { cursor: grabbing; }
+.custom-block.selected { outline: 2px solid #176c59; outline-offset: 2px; }
+.offscreen-export .custom-block.selected { outline: 0; }
+.custom-block.block-image { padding: 0; }
+.custom-block.block-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.custom-block.block-chat { background: #fff; box-shadow: 0 2px 8px #0002; max-width: 82%; }
+.custom-block.block-button { display: grid; place-items: center; background: #176c59; color: #fff !important; font-weight: 700; }
+.custom-block.block-appbar { display: flex; align-items: center; background: #fff; box-shadow: 0 1px 3px #0002; font-weight: 700; }
+.custom-block.block-notification { display: flex; flex-direction: column; gap: 4px; background: #fffffff0; box-shadow: 0 4px 16px #0003; }
+.custom-block.block-notification strong { font-size: .8em; }
+.custom-block.block-notification span { font-size: .85em; }

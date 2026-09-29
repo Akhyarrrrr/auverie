@@ -1,237 +1,83 @@
-import React, { useRef, useState } from 'react';
-import {
-  Sparkles,
-  Download,
-  Copy,
-  FileJson,
-  Upload,
-  RotateCcw,
-  FileText,
-  Check,
-  Loader2,
-  FolderArchive,
-  BookOpen
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ChevronDown, Download, FileUp, FileDown, Moon, Redo2, Sun, Undo2, WandSparkles } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
-import {
-  downloadElementAsPng,
-  copyElementToClipboard,
-  batchExportSlidesAsZip,
-  exportElementAsBlob
-} from '../../services/exportService';
 import { downloadProjectAsJson, parseProjectJsonFile } from '../../services/storage';
 
-export default function StudioHeader({ onOpenScriptModal, onOpenTemplateModal }) {
-  const {
-    project,
-    updateTitle,
-    setProject,
-    activeSlideIndex,
-    setActiveSlideIndex,
-    isExporting,
-    setIsExporting,
-    exportProgress,
-    setExportProgress
-  } = useProject();
-
-  const [copied, setCopied] = useState(false);
-  const fileInputRef = useRef(null);
-
-  // 1-Click Copy Slide Image to Clipboard
-  const handleCopyClipboard = async () => {
-    try {
-      const element = document.getElementById('phone-screen-canvas');
-      if (!element) return;
-      setCopied(true);
-      await copyElementToClipboard(element, 2);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error(err);
-      alert('Gagal menyalin gambar ke clipboard.');
-      setCopied(false);
-    }
+export default function StudioHeader({ onOpenScript, onOpenExport, studioTheme, onToggleStudioTheme }) {
+  const { project, updateTitle, closeProject, createProject, importProject, saveStatus,
+    canUndo, canRedo, undo, redo } = useProject();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [backupBusy, setBackupBusy] = useState(false);
+  const fileRef = useRef(null);
+  useEffect(() => {
+    const key = event => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target.closest('input,textarea,[contenteditable=true]')) return;
+      if (event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); }
+      else if (event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); }
+    };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, [undo, redo]);
+  const run = async action => {
+    try { setError(''); await action(); setMenuOpen(false); }
+    catch (cause) { setError(cause.message || 'Proyek tidak dapat disimpan.'); }
   };
 
-  // Download Current Slide as PNG
-  const handleDownloadSlidePng = async () => {
-    try {
-      const element = document.getElementById('phone-screen-canvas');
-      if (!element) return;
-      const currentSlide = project.slides[activeSlideIndex] || { type: 'slide' };
-      const paddedNum = String(activeSlideIndex + 1).padStart(2, '0');
-      const filename = `${paddedNum}_${currentSlide.type}.png`;
-      await downloadElementAsPng(element, filename, 2);
-    } catch (err) {
-      console.error(err);
-      alert('Gagal mengunduh gambar slide.');
-    }
-  };
-
-  // Batch Export All Slides as ZIP
-  const handleBatchExportZip = async () => {
-    if (isExporting) return;
-    try {
-      setIsExporting(true);
-      const originalSlideIndex = activeSlideIndex;
-
-      // Render each slide sequentially
-      const renderSlideAsync = async (slide, index) => {
-        setActiveSlideIndex(index);
-        await new Promise(r => setTimeout(r, 380));
-        const element = document.getElementById('phone-screen-canvas');
-        if (!element) throw new Error('Phone canvas container not found');
-        return await exportElementAsBlob(element, 2);
-      };
-
-      await batchExportSlidesAsZip(
-        project.slides,
-        renderSlideAsync,
-        project.title,
-        (progress) => setExportProgress(progress)
-      );
-
-      setActiveSlideIndex(originalSlideIndex);
-      alert(`Berhasil mengekspor seluruh ${project.slides.length} slide ke dalam file ZIP!`);
-    } catch (err) {
-      console.error(err);
-      alert('Terjadi kesalahan saat mengekspor batch ZIP.');
-    } finally {
-      setIsExporting(false);
-      setExportProgress(null);
-    }
-  };
-
-  // Save / Load .aujson
-  const handleExportJson = () => {
-    downloadProjectAsJson(project);
-  };
-
-  const handleImportJson = (e) => {
-    const file = e.target.files?.[0];
+  const loadFile = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
-    parseProjectJsonFile(file)
-      .then((imported) => {
-        setProject(imported);
-        setActiveSlideIndex(0);
-        alert(`Proyek "${imported.title}" berhasil dimuat!`);
-      })
-      .catch((err) => {
-        alert(err.message || 'Gagal memuat file proyek.');
-      });
+    try {
+      await importProject(await parseProjectJsonFile(file));
+      setMenuOpen(false);
+      setError('');
+    } catch (cause) {
+      setError(cause.message || 'Proyek tidak dapat dibuka.');
+    }
   };
 
-  return (
-    <header className="studio-header">
-      {/* Brand & Title */}
-      <div className="brand-section">
-        <div className="brand-badge">
-          <Sparkles size={16} />
-          <span>AU STUDIO</span>
-        </div>
-
-        <input
-          type="text"
-          className="project-title-input"
-          value={project.title}
-          onChange={(e) => updateTitle(e.target.value)}
-          placeholder="Judul Cerita AU..."
-          title="Klik untuk mengubah judul cerita"
-        />
+  return <header className="studio-header">
+    <div className="header-project">
+      <button className="icon-button header-back" onClick={() => run(closeProject)} aria-label="Lihat semua proyek" title="Lihat semua proyek"><ArrowLeft size={18} /></button>
+      <div className="brand-mark" aria-hidden="true">au<span>.</span></div>
+      <div className="project-heading">
+        <label htmlFor="project-title">Judul cerita</label>
+        <input id="project-title" value={project.title} onChange={e => updateTitle(e.target.value)} aria-label="Judul cerita" />
       </div>
+      <span className={`save-indicator ${saveStatus}`} role="status">
+        {saveStatus === 'saving' ? 'Menyimpan…' : saveStatus === 'error' ? 'Gagal menyimpan' : 'Tersimpan'}
+      </span>
+    </div>
 
-      {/* Middle Tools */}
-      <div className="header-center-actions">
-        <button
-          className="btn-header"
-          onClick={onOpenTemplateModal}
-          style={{ background: 'rgba(236, 72, 153, 0.15)', borderColor: 'rgba(236, 72, 153, 0.4)', color: '#f472b6' }}
-          title="Pilih template cerita pembuka instan"
-        >
-          <BookOpen size={15} />
-          <span>Template Cerita</span>
-        </button>
-
-        <button
-          className="btn-header"
-          onClick={onOpenScriptModal}
-          title="Tulis naskah dialog cepat langsung jadi slide"
-        >
-          <FileText size={15} style={{ color: '#a855f7' }} />
-          <span>Naskah Cepat</span>
-        </button>
-
-        <button
-          className="btn-header"
-          onClick={handleExportJson}
-          title="Simpan file proyek (.aujson) untuk backup"
-        >
-          <FileJson size={14} />
-          <span>Simpan .aujson</span>
-        </button>
-
-        <button
-          className="btn-header"
-          onClick={() => fileInputRef.current?.click()}
-          title="Buka file proyek (.aujson)"
-        >
-          <Upload size={14} />
-          <span>Buka .aujson</span>
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          accept=".aujson,application/json"
-          onChange={handleImportJson}
-        />
+    <div className="header-actions">
+      <div className="history-actions">
+        <button className="icon-button" onClick={undo} disabled={!canUndo} title="Urungkan" aria-label="Urungkan"><Undo2 size={18} /></button>
+        <button className="icon-button" onClick={redo} disabled={!canRedo} title="Ulangi" aria-label="Ulangi"><Redo2 size={18} /></button>
       </div>
-
-      {/* Right Action Buttons */}
-      <div className="header-right-actions">
-        {/* Copy Image Button */}
-        <button
-          className="btn-header"
-          onClick={handleCopyClipboard}
-          title="Salin gambar slide aktif ke clipboard"
-        >
-          {copied ? <Check size={15} color="#10b981" /> : <Copy size={15} />}
-          <span>{copied ? 'Tersalin!' : 'Salin Gambar'}</span>
+      <button className="button secondary header-script" onClick={onOpenScript} aria-label="Naskah Cepat"><WandSparkles size={17} /> <span>Naskah Cepat</span></button>
+      <button className="icon-button header-theme" onClick={onToggleStudioTheme} title="Ganti tema studio" aria-label="Ganti tema studio">
+        {studioTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+      <div className="menu-anchor">
+        <button className="button secondary header-project-menu" onClick={() => setMenuOpen(value => !value)} aria-expanded={menuOpen}>
+          Proyek <ChevronDown size={16} />
         </button>
-
-        {/* Download Single PNG */}
-        <button
-          className="btn-header"
-          onClick={handleDownloadSlidePng}
-          title="Unduh slide ini sebagai gambar PNG tajam"
-        >
-          <Download size={15} />
-          <span>Unduh PNG</span>
-        </button>
-
-        {/* Export All Slides as ZIP */}
-        <button
-          className="btn-header primary"
-          onClick={handleBatchExportZip}
-          disabled={isExporting}
-          title="Render dan unduh semua slide sekaligus dalam file ZIP"
-        >
-          {isExporting ? (
-            <>
-              <Loader2 size={16} className="spin-animate" />
-              <span>
-                {exportProgress
-                  ? `${exportProgress.current}/${exportProgress.total}`
-                  : 'Mengekspor...'}
-              </span>
-            </>
-          ) : (
-            <>
-              <FolderArchive size={16} />
-              <span>Ekspor Semua (.ZIP)</span>
-            </>
-          )}
-        </button>
+        {menuOpen && <div className="menu-popover" role="menu">
+          <button role="menuitem" onClick={() => run(closeProject)}>Semua proyek</button>
+          <button role="menuitem" onClick={() => run(createProject)}>Buat proyek baru</button>
+          <button role="menuitem" disabled={backupBusy} onClick={() => run(async () => {
+            setBackupBusy(true);
+            try { const failures = await downloadProjectAsJson(project);
+              if (failures.length) setError(`Cadangan diunduh. ${failures.length} gambar masih memakai tautan luar: ${failures[0].slice(0, 100)}. Unggah berkasnya agar cadangan sepenuhnya portabel.`);
+            } finally { setBackupBusy(false); }
+          })}><FileDown size={16} /> {backupBusy ? 'Menyiapkan cadangan…' : 'Simpan cadangan .aujson'}</button>
+          <button role="menuitem" onClick={() => fileRef.current?.click()}><FileUp size={16} /> Impor proyek .aujson</button>
+        </div>}
       </div>
-    </header>
-  );
+      <button className="button primary" onClick={onOpenExport}><Download size={17} /> <span>Ekspor</span></button>
+    </div>
+    <input ref={fileRef} className="visually-hidden" type="file" accept=".aujson,application/json" onChange={loadFile} />
+    {error && <div className="header-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Tutup pesan">×</button></div>}
+  </header>;
 }

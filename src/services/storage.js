@@ -1,95 +1,108 @@
 import { openDB } from 'idb';
+import { DEFAULT_GLOBAL_SETTINGS } from '../data/samplePresets.js';
+import { normalizePerson, normalizeSlide, SCHEMA_VERSION } from './sceneModel.js';
 
 const DB_NAME = 'au_studio_db';
 const DB_VERSION = 1;
-const STORE_PROJECTS = 'projects';
-const STORE_SETTINGS = 'app_settings';
+const PROJECTS = 'projects';
+const SETTINGS = 'app_settings';
+const LAST_PROJECT = 'last_project_id';
 
-export async function getDb() {
+async function getDb() {
   return openDB(DB_NAME, DB_VERSION, {
     upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
-        db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
-        db.createObjectStore(STORE_SETTINGS);
-      }
+      if (!db.objectStoreNames.contains(PROJECTS)) db.createObjectStore(PROJECTS, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(SETTINGS)) db.createObjectStore(SETTINGS);
     }
   });
 }
 
-export async function saveProject(project) {
-  try {
-    const db = await getDb();
-    const updated = { ...project, updatedAt: Date.now() };
-    await db.put(STORE_PROJECTS, updated);
-    return updated;
-  } catch (err) {
-    console.error('Failed to save project to IndexedDB:', err);
-    return project;
+export function normalizeProject(input) {
+  if (!input || !Array.isArray(input.slides) || !Array.isArray(input.characters)) {
+    throw new Error('Berkas proyek tidak memiliki daftar slide dan karakter yang valid.');
   }
+  if (input.characters.some(person => !person || typeof person !== 'object' || Array.isArray(person))) throw new Error('Daftar karakter berisi data yang tidak valid.');
+  const settings = { ...DEFAULT_GLOBAL_SETTINGS, ...(input.globalSettings || {}) };
+  settings.phoneModel = String(settings.phoneModel || DEFAULT_GLOBAL_SETTINGS.phoneModel);
+  const characters = input.characters.map((character, index) => normalizePerson(character, `karakter-${index}`));
+  const selfCharacter = normalizePerson(input.selfCharacter || { name: 'Saya', handle: '@saya' }, 'me');
+  return {
+    ...input,
+    schemaVersion: SCHEMA_VERSION,
+    id: String(input.id || crypto.randomUUID()),
+    title: String(input.title || 'Cerita tanpa judul'),
+    globalSettings: settings, characters, selfCharacter,
+    stickerLibrary: Array.isArray(input.stickerLibrary) ? input.stickerLibrary.filter(item => item && typeof item.url === 'string') : [],
+    slides: input.slides.map((slide, index) => {
+      const normalized = normalizeSlide(slide, index);
+      return { ...normalized, customSettings: { ...settings, ...normalized.customSettings },
+        charactersSnapshot: normalized.charactersSnapshot || structuredClone([...characters, { ...selfCharacter, id: 'me' }]) };
+    })
+  };
+}
+
+export async function saveProject(project) {
+  const db = await getDb();
+  const updated = { ...project, updatedAt: Date.now() };
+  const transaction = db.transaction([PROJECTS, SETTINGS], 'readwrite');
+  await Promise.all([
+    transaction.objectStore(PROJECTS).put(updated),
+    transaction.objectStore(SETTINGS).put(updated.id, LAST_PROJECT),
+    transaction.done
+  ]);
+  return updated;
 }
 
 export async function loadProject(id) {
-  try {
-    const db = await getDb();
-    return await db.get(STORE_PROJECTS, id);
-  } catch (err) {
-    console.error('Failed to load project from IndexedDB:', err);
-    return null;
-  }
+  const db = await getDb();
+  const saved = await db.get(PROJECTS, id);
+  return saved ? normalizeProject(saved) : null;
+}
+
+export async function getLastProjectId() {
+  return (await getDb()).get(SETTINGS, LAST_PROJECT);
 }
 
 export async function getAllProjects() {
-  try {
-    const db = await getDb();
-    return await db.getAll(STORE_PROJECTS);
-  } catch (err) {
-    console.error('Failed to load all projects:', err);
-    return [];
-  }
+  const projects = await (await getDb()).getAll(PROJECTS);
+  return projects.map(normalizeProject).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 }
 
-export async function deleteProject(id) {
-  try {
-    const db = await getDb();
-    await db.delete(STORE_PROJECTS, id);
-    return true;
-  } catch (err) {
-    console.error('Failed to delete project:', err);
-    return false;
-  }
-}
-
-// Export Project as .aujson file for backup/sharing
-export function downloadProjectAsJson(project) {
-  const jsonStr = JSON.stringify(project, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const safeTitle = (project.title || 'au_project').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
-  a.href = url;
-  a.download = `${safeTitle}.aujson`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// Import Project from uploaded .aujson
-export function parseProjectJsonFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
+export async function downloadProjectAsJson(project) {
+  const assets = new Set(['avatar', 'mediaUrl', 'imageUrl', 'backgroundUrl', 'coverUrl', 'stickerUrl', 'albumArt', 'wallpaperUrl',
+    'groupAvatar', 'contactAvatar', 'callImageUrl', 'selfVideoUrl', 'customWallpaper', 'src']);
+  const failures = [], cache = new Map();
+  const embed = async source => {
+    if (!cache.has(source)) cache.set(source, (async () => {
       try {
-        const project = JSON.parse(e.target.result);
-        if (!project || !project.slides || !project.characters) {
-          throw new Error('Format file proyek .aujson tidak valid.');
-        }
-        resolve(project);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    reader.onerror = () => reject(new Error('Gagal membaca file.'));
-    reader.readAsText(file);
-  });
+        const response = await fetch(source, { mode: 'cors', signal: AbortSignal.timeout(8000) });
+        if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) throw new Error();
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); });
+      } catch { failures.push(source); return source; }
+    })());
+    return cache.get(source);
+  };
+  const portable = async (value, key = '') => {
+    if (typeof value === 'string') return /^(https?:|\/)/.test(value) && (assets.has(key) || ['images', 'stickerLibrary'].includes(key)) ? embed(value) : value;
+    if (!value || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return Promise.all(value.map(item => portable(item, key)));
+    return Object.fromEntries(await Promise.all(Object.entries(value).map(async ([name, item]) => [name, await portable(item, name === 'url' && ['stickerLibrary', 'images'].includes(key) ? key : name)])));
+  };
+  const blob = new Blob([JSON.stringify(await portable(project), null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${(project.title || 'cerita-au').replace(/[^a-z0-9_-]/gi, '_')}.aujson`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return failures;
+}
+
+export async function parseProjectJsonFile(file) {
+  try {
+    return normalizeProject(JSON.parse(await file.text()));
+  } catch (error) {
+    throw new Error(error instanceof SyntaxError ? 'Berkas ini bukan JSON yang valid.' : error.message);
+  }
 }

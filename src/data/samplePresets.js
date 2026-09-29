@@ -317,31 +317,3 @@ export const SAMPLE_PROJECT = {
     }
   ]
 };
-
-// Preset Story Packs that non-tech creators can choose in 1 click!
-export const STORY_TEMPLATES = [
-  {
-    id: "tpl-salah-kirim",
-    title: "Drama Salah Kirim WA",
-    description: "Karakter berniat curhat ke teman, tapi malah salah kirim ke gebetan / musuh.",
-    icon: "💬"
-  },
-  {
-    id: "tpl-menfess-viral",
-    title: "Curhat Menfess Twitter Viral",
-    description: "Tweet curhat anonim yang viral dan dibalas langsung oleh orang yang dimaksud.",
-    icon: "𝕏"
-  },
-  {
-    id: "tpl-baper-ig",
-    title: "Kode di Instagram Story",
-    description: "Pasang lagu galau di Close Friends, lalu dia tiba-tiba reply story.",
-    icon: "📸"
-  },
-  {
-    id: "tpl-chaos-grup",
-    title: "Kosan Chaos (WhatsApp Group)",
-    description: "Obrolan heboh anak grup saat ada gosip baru atau ada yang ketahuan pacaran.",
-    icon: "👥"
-  }
-];

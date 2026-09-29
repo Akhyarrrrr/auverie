@@ -1,251 +1,78 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Plus,
-  Trash2,
-  Copy,
-  ChevronLeft,
-  ChevronRight,
-  MessageCircle,
-  Lock,
-  Smartphone
-} from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Copy, ImagePlus, Layers3, LockKeyhole, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import { SCENE_APPS, SCREEN_LABELS, sceneIdentity } from '../../data/sceneCatalog';
 
-const InstagramIcon = ({ size = 20, color = "#e1306c" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-  </svg>
-);
+const EXTRA_SLIDES = [
+  ['lockscreen', 'Layar kunci'],
+  ['custom_app', 'Aplikasi bebas'], ['composition', 'Kolase']
+];
 
-export default function StoryboardStrip() {
-  const {
-    project,
-    activeSlideIndex,
-    setActiveSlideIndex,
-    addSlide,
-    deleteSlide,
-    duplicateSlide,
-    reorderSlides
-  } = useProject();
+const labelFor = slide => {
+  const { app, screen } = sceneIdentity(slide);
+  return app ? `${SCENE_APPS.find(item => item.id === app)?.name || app} · ${SCREEN_LABELS[screen] || screen}`
+    : EXTRA_SLIDES.find(item => item[0] === slide.type)?.[1] || 'Slide';
+};
+const iconFor = type => type === 'lockscreen' ? <LockKeyhole size={16} />
+  : type === 'custom_app' ? <Layers3 size={16} />
+  : type === 'ig_post' || type === 'ig_story' ? <ImagePlus size={16} />
+  : <MessageCircle size={16} />;
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+function summary(slide) {
+  if (slide.type === 'composition') return `${slide.composition?.items?.length || 0} bagian · salinan adegan`;
+  const c = slide.content || {};
+  return c.text || c.caption || c.messages?.[0]?.text || c.notifications?.[0]?.message || c.appName || 'Belum ada konten';
+}
 
-  // Close menu on click outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+export default function StoryboardStrip({ onSelectSlide }) {
+  const { project, activeSlideIndex, setActiveSlideIndex, addSlide, duplicateSlide, deleteSlide, reorderSlides } = useProject();
+  const [showAdd, setShowAdd] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [app, setApp] = useState('whatsapp');
 
-  const getSlideIcon = (type) => {
-    switch (type) {
-      case 'wa_chat':
-      case 'wa_group':
-        return <MessageCircle size={20} color="#25d366" />;
-      case 'x_tweet':
-      case 'x_dm':
-        return <span style={{ fontSize: '16px', fontWeight: 900 }}>𝕏</span>;
-      case 'ig_dm':
-      case 'ig_post':
-        return <InstagramIcon size={20} color="#e1306c" />;
-      case 'ig_story':
-        return <InstagramIcon size={20} color="#10b981" />;
-      case 'lockscreen':
-        return <Lock size={18} color="#60a5fa" />;
-      default:
-        return <Smartphone size={18} />;
-    }
+  const move = (index, direction) => {
+    const target = index + direction;
+    if (target < 0 || target >= project.slides.length) return;
+    const next = [...project.slides];
+    [next[index], next[target]] = [next[target], next[index]];
+    reorderSlides(next);
+    setActiveSlideIndex(next.findIndex(slide => slide.id === project.slides[activeSlideIndex]?.id));
   };
 
-  const getSlideBadge = (type) => {
-    switch (type) {
-      case 'wa_chat': return 'WA';
-      case 'wa_group': return 'GRUP';
-      case 'x_tweet': return 'POST 𝕏';
-      case 'x_dm': return 'DM 𝕏';
-      case 'ig_dm': return 'IG DM';
-      case 'ig_post': return 'IG POST';
-      case 'ig_story': return 'STORY';
-      case 'lockscreen': return 'LOCK';
-      default: return 'SLIDE';
-    }
-  };
-
-  const moveSlide = (e, index, direction) => {
-    e.stopPropagation();
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= project.slides.length) return;
-
-    const updated = [...project.slides];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(newIndex, 0, moved);
-    reorderSlides(updated);
-    setActiveSlideIndex(newIndex);
-  };
-
-  return (
-    <div className="storyboard-strip">
-      <div className="storyboard-slides-container">
-        {project.slides.map((slide, idx) => {
-          const isActive = idx === activeSlideIndex;
-
-          return (
-            <div
-              key={slide.id}
-              className={`slide-card-item ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveSlideIndex(idx)}
-              title={`${slide.title || 'Slide'} (${getSlideBadge(slide.type)})`}
-            >
-              <span className="slide-card-badge">
-                {getSlideBadge(slide.type)}
-              </span>
-
-              <div className="slide-card-icon">
-                {getSlideIcon(slide.type)}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <span className="slide-card-number">#{idx + 1}</span>
-
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {idx > 0 && (
-                    <button
-                      className="no-export"
-                      style={{ padding: 1, opacity: 0.7 }}
-                      onClick={(e) => moveSlide(e, idx, -1)}
-                      title="Pindah ke kiri"
-                    >
-                      <ChevronLeft size={12} />
-                    </button>
-                  )}
-                  {idx < project.slides.length - 1 && (
-                    <button
-                      className="no-export"
-                      style={{ padding: 1, opacity: 0.7 }}
-                      onClick={(e) => moveSlide(e, idx, 1)}
-                      title="Pindah ke kanan"
-                    >
-                      <ChevronRight size={12} />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Delete Button on Hover */}
-              <button
-                className="slide-delete-hover-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteSlide(slide.id);
-                }}
-                title="Hapus slide"
-              >
-                ×
-              </button>
-            </div>
-          );
-        })}
-
-        {/* Add Slide Menu */}
-        <div className="add-slide-menu-wrapper" ref={menuRef}>
-          <button
-            className="btn-add-slide"
-            onClick={() => setMenuOpen(!menuOpen)}
-            title="Tambah adegan / slide baru"
-          >
-            <Plus size={20} />
-            <span>Tambah</span>
-          </button>
-
-          {menuOpen && (
-            <div style={{
-              position: 'absolute',
-              bottom: '96px',
-              left: 0,
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-medium)',
-              borderRadius: '12px',
-              padding: '6px',
-              width: '210px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              boxShadow: 'var(--shadow-lg)',
-              zIndex: 70
-            }}>
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('wa_chat'); setMenuOpen(false); }}
-              >
-                <MessageCircle size={16} color="#25d366" />
-                <span>WhatsApp Chat</span>
-              </button>
-
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('wa_group'); setMenuOpen(false); }}
-              >
-                <MessageCircle size={16} color="#00a884" />
-                <span>WhatsApp Group</span>
-              </button>
-
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('x_tweet'); setMenuOpen(false); }}
-              >
-                <span style={{ fontWeight: 900, width: 16, textAlign: 'center' }}>𝕏</span>
-                <span>Twitter / X Tweet</span>
-              </button>
-
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('ig_dm'); setMenuOpen(false); }}
-              >
-                <InstagramIcon size={16} color="#e1306c" />
-                <span>Instagram DM</span>
-              </button>
-
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('ig_post'); setMenuOpen(false); }}
-              >
-                <InstagramIcon size={16} color="#f77737" />
-                <span>Instagram Post</span>
-              </button>
-
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('ig_story'); setMenuOpen(false); }}
-              >
-                <InstagramIcon size={16} color="#10b981" />
-                <span>Instagram Story</span>
-              </button>
-
-              <button
-                className="canvas-toolbar-btn"
-                style={{ width: '100%', justifyContent: 'flex-start', gap: 8 }}
-                onClick={() => { addSlide('lockscreen'); setMenuOpen(false); }}
-              >
-                <Lock size={16} color="#60a5fa" />
-                <span>iPhone Lockscreen</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+  return <div className="scene-list">
+    <div className="scene-list-heading">
+      <div><h2>Alur cerita</h2><p>{project.slides.length} slide · pilih untuk mengedit</p></div>
+      <button className="icon-button" onClick={() => setShowAdd(value => !value)} aria-label="Tambah slide" aria-expanded={showAdd}><Plus size={19} /></button>
     </div>
-  );
+    {showAdd && <div className="add-type-list">
+      <label className="field"><span>1. Pilih aplikasi</span><select value={app} onChange={event => setApp(event.target.value)}>
+        {SCENE_APPS.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select></label>
+      <p className="field-hint">2. Pilih adegan</p>
+      {SCENE_APPS.find(item => item.id === app).screens.map(screen => <button key={screen} onClick={() => {
+        addSlide('app_scene', { app, screen }); setShowAdd(false); setNotice(''); onSelectSlide?.();
+      }}>{iconFor(screen)}<span>{SCREEN_LABELS[screen]}</span></button>)}
+      {EXTRA_SLIDES.map(([type, label]) => <button key={type} onClick={() => {
+        addSlide(type); setShowAdd(false); setNotice(''); onSelectSlide?.();
+      }}>{iconFor(type)}<span>{label}</span></button>)}
+    </div>}
+    <div className="scene-scroll">
+      {project.slides.map((slide, index) => <div key={slide.id} className={`scene-item ${index === activeSlideIndex ? 'active' : ''}`}>
+        <button className="scene-select" onClick={() => { setActiveSlideIndex(index); onSelectSlide?.(); }} aria-current={index === activeSlideIndex ? 'step' : undefined}>
+          <span className={`scene-thumb type-${slide.type}`}>{iconFor(slide.type)}<small>{index + 1}</small></span>
+          <span className="scene-copy"><strong>{slide.title || `Slide ${index + 1}`}</strong><span>{labelFor(slide)}</span><em>{summary(slide)}</em></span>
+        </button>
+        <div className="scene-actions">
+          <button onClick={() => move(index, -1)} disabled={index === 0} title="Pindah ke atas" aria-label={`Pindah slide ${index + 1} ke atas`}><ChevronUp size={15} /></button>
+          <button onClick={() => move(index, 1)} disabled={index === project.slides.length - 1} title="Pindah ke bawah" aria-label={`Pindah slide ${index + 1} ke bawah`}><ChevronDown size={15} /></button>
+          <button onClick={() => duplicateSlide(slide.id)} title="Duplikasi" aria-label={`Duplikasi slide ${index + 1}`}><Copy size={14} /></button>
+          <button onClick={() => {
+            if (!deleteSlide(slide.id)) setNotice('Cerita harus memiliki setidaknya satu slide.');
+          }} title="Hapus" aria-label={`Hapus slide ${index + 1}`}><Trash2 size={14} /></button>
+        </div>
+      </div>)}
+    </div>
+    {notice && <p className="inline-notice" role="status">{notice}</p>}
+    <button className="button add-scene-button" onClick={() => setShowAdd(value => !value)}><Plus size={18} /> Tambah slide</button>
+  </div>;
 }

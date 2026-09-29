@@ -4,12 +4,15 @@ import App from './App.jsx';
 import { ProjectProvider } from './context/ProjectContext.jsx';
 
 import './index.css';
+import './styles/fonts.css';
 import './styles/studio.css';
 import './styles/phone-frame.css';
 import './styles/mockups/whatsapp.css';
 import './styles/mockups/twitter.css';
 import './styles/mockups/instagram.css';
 import './styles/mockups/lockscreen.css';
+import './styles/mockups/custom.css';
+import './styles/mockups/scenes.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

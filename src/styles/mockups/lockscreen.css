@@ -1,4 +1,4 @@
-/* iOS Lockscreen Mockup Styles (Maximal Realism) */
+/* iOS and Android lock screen layouts. */
 .lockscreen-wrapper {
   flex: 1;
   display: flex;
@@ -8,7 +8,7 @@
   background-size: cover;
   background-position: center;
   color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+  font-family: var(--phone-font-ui);
   overflow: hidden;
   user-select: none;
 }
@@ -56,6 +56,7 @@
 
 /* Clock Font Variants (iOS 18 Styles) */
 .lockscreen-clock {
+  font-family: var(--phone-font-display);
   font-size: 76px;
   font-weight: 700;
   letter-spacing: -0.04em;
@@ -70,7 +71,7 @@
 }
 
 .lockscreen-clock.font-modern {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--phone-font-display);
   font-weight: 800;
   letter-spacing: -0.05em;
 }
@@ -244,7 +245,7 @@
 }
 
 .lockscreen-notif-title {
-  font-size: 14.5px;
+  font-size: var(--phone-type-message);
   font-weight: 700;
   color: #ffffff;
 }
@@ -281,3 +282,11 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
+.android-lockscreen .lockscreen-content { padding-top: 70px; }
+.android-lockscreen .lockscreen-header-center { align-items: flex-start; margin: 0 8px 24px; }
+.android-lockscreen .lockscreen-padlock { display: none; }
+.android-lockscreen .lockscreen-clock { order: -1; font-size: 65px; font-weight: 400; letter-spacing: -.05em; }
+.android-lockscreen .lockscreen-date { font-size: 15px; font-weight: 500; }
+.android-lockscreen .lockscreen-notif-card { border-radius: 22px; background: rgba(240, 244, 250, .87); color: #202630; box-shadow: none; }
+.android-lockscreen .lockscreen-notif-header, .android-lockscreen .lockscreen-notif-body { color: #43505e; }
+.android-lockscreen .lockscreen-notif-title { color: #202630; }
