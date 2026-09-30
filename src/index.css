@@ -1,18 +1,18 @@
 :root {
   font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
-  color: #22312e;
-  background: #f3f4ef;
+  color: #23312c;
+  background: #f6f3eb;
   font-synthesis: none;
-  --bg-primary: #f3f4ef;
-  --bg-secondary: #fffefa;
-  --bg-tertiary: #f0f2ec;
+  --bg-primary: #f6f3eb;
+  --bg-secondary: #fffdfa;
+  --bg-tertiary: #efeee6;
   --bg-glass: #eef4ef;
   --bg-glass-hover: #e5eee7;
   --bg-glass-active: #dcebe2;
   --border-subtle: #dce3da;
   --border-medium: #bacbc0;
-  --accent-primary: #176c59;
-  --text-primary: #22312e;
+  --accent-primary: #1c6250;
+  --text-primary: #23312c;
   --text-secondary: #4e615b;
   --text-muted: #64756d;
   --shadow-sm: 0 2px 8px rgba(22, 52, 41, .08);

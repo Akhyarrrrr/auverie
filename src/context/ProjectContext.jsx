@@ -59,6 +59,8 @@ export function ProjectProvider({ children, previewProject = null }) {
   const [history, dispatch] = useReducer(historyReducer, { present: previewProject, past: [], future: [] });
   const project = history.present;
   const [ready, setReady] = useState(Boolean(previewProject));
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [recentProjects, setRecentProjects] = useState([]);
   const [saveStatus, setSaveStatus] = useState('saved');
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
@@ -68,6 +70,8 @@ export function ProjectProvider({ children, previewProject = null }) {
 
   useEffect(() => {
     if (previewProject) return;
+    setReady(false);
+    setLoadError(false);
     let cancelled = false;
     (async () => {
       try {
@@ -81,13 +85,13 @@ export function ProjectProvider({ children, previewProject = null }) {
         }
       } catch (error) {
         console.error('Gagal membaca proyek:', error);
-        if (!cancelled) setSaveStatus('error');
+        if (!cancelled) { setSaveStatus('error'); setLoadError(true); }
       } finally {
         if (!cancelled) setReady(true);
       }
     })();
     return () => { cancelled = true; };
-  }, [previewProject]);
+  }, [previewProject, loadAttempt]);
 
   useEffect(() => {
     if (previewProject || !ready || !project) return;
@@ -118,6 +122,20 @@ export function ProjectProvider({ children, previewProject = null }) {
   const flushCurrent = async () => {
     clearTimeout(saveTimer.current); saveRevision.current++;
     if (project) await persist(project);
+  };
+  const saveNow = async () => {
+    clearTimeout(saveTimer.current);
+    const revision = ++saveRevision.current;
+    if (!project) return;
+    setSaveStatus('saving');
+    try {
+      const saved = await persist(project);
+      setRecentProjects(previous => [saved, ...previous.filter(item => item.id !== saved.id)]);
+      if (revision === saveRevision.current) setSaveStatus('saved');
+    } catch (error) {
+      if (revision === saveRevision.current) setSaveStatus('error');
+      throw error;
+    }
   };
   const createProject = async (title) => { await flushCurrent(); await replaceProject(makeProject(title)); };
   const startExample = async () => {
@@ -224,8 +242,8 @@ export function ProjectProvider({ children, previewProject = null }) {
     : project?.characters.find(c => c.id === id) || { id, name: 'Karakter tidak ditemukan', handle: '@tidakada', avatar: '' };
 
   return <ProjectContext.Provider value={{
-    ready, project, setProject, replaceProject, createProject, startExample, openProject, importProject,
-    closeProject, recentProjects, saveStatus, canUndo: history.past.length > 0, canRedo: history.future.length > 0,
+    ready, loadError, retryLoad: () => setLoadAttempt(value => value + 1), project, setProject, replaceProject, createProject, startExample, openProject, importProject,
+    closeProject, saveNow, recentProjects, saveStatus, canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     undo: () => dispatch({ type: 'undo' }), redo: () => dispatch({ type: 'redo' }),
     activeSlideIndex: safeIndex, setActiveSlideIndex, activeSlide, activeTab, setActiveTab,
     editTarget, setEditTarget, interactionMode, setInteractionMode, updateTitle, updateGlobalSettings, updateSelfCharacter,
