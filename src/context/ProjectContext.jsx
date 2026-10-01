@@ -39,14 +39,14 @@ function makeSlide(type, project, options = {}) {
 }
 
 function makeProject(title = 'Cerita baru') {
-  const project = normalizeProject({
+  const project = {
     id: uid(), title, createdAt: Date.now(), updatedAt: Date.now(),
     globalSettings: copy(DEFAULT_GLOBAL_SETTINGS),
     selfCharacter: { name: 'Saya', handle: '@saya', avatar: '' },
     characters: [{ ...copy(DEFAULT_CHARACTERS[0]), name: 'Tokoh 1', handle: '@tokoh1', avatar: '' }], slides: []
-  });
+  };
   project.slides = [makeSlide('app_scene', project, { app: 'whatsapp', screen: 'chat' })];
-  return project;
+  return normalizeProject(project);
 }
 
 export function ProjectProvider({ children, previewProject = null }) {
@@ -153,11 +153,6 @@ export function ProjectProvider({ children, previewProject = null }) {
     await replaceProject({ ...normalizeProject(imported), id: uid(), createdAt: Date.now(), updatedAt: Date.now(),
       title: `${imported.title || 'Cerita'} (impor)` });
   };
-  const closeProject = async () => {
-    await flushCurrent();
-    dispatch({ type: 'load', project: null }); setEditTarget(null);
-  };
-
   const slides = project?.slides || [];
   const safeIndex = Math.min(Math.max(0, activeSlideIndex), Math.max(0, slides.length - 1));
   const activeSlide = slides[safeIndex] || null;
@@ -243,7 +238,7 @@ export function ProjectProvider({ children, previewProject = null }) {
 
   return <ProjectContext.Provider value={{
     ready, loadError, retryLoad: () => setLoadAttempt(value => value + 1), project, setProject, replaceProject, createProject, startExample, openProject, importProject,
-    closeProject, saveNow, recentProjects, saveStatus, canUndo: history.past.length > 0, canRedo: history.future.length > 0,
+    saveNow, recentProjects, saveStatus, canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     undo: () => dispatch({ type: 'undo' }), redo: () => dispatch({ type: 'redo' }),
     activeSlideIndex: safeIndex, setActiveSlideIndex, activeSlide, activeTab, setActiveTab,
     editTarget, setEditTarget, interactionMode, setInteractionMode, updateTitle, updateGlobalSettings, updateSelfCharacter,

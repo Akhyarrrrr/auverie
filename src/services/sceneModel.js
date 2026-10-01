@@ -1,4 +1,5 @@
 import { messageKind, appDefinition, sceneIdentity } from '../data/sceneCatalog.js';
+import { storyError } from './errors.js';
 
 export const SCHEMA_VERSION = 3;
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -38,7 +39,7 @@ export function sceneCrop(slide, settings = {}) {
 export function normalizePerson(input, id) {
   const person = object(input);
   for (const key of ['name', 'handle', 'avatar', 'bio', 'color']) if (person[key] != null && typeof person[key] === 'object') {
-    throw new Error(`Data karakter ${key} harus berupa teks.`);
+    throw storyError('Data karakter {field} harus berupa teks.', { field: key });
   }
   return { ...person, id: String(person.id || id), name: String(person.name || 'Karakter'), handle: String(person.handle || '@karakter'), avatar: String(person.avatar || '') };
 }
@@ -46,17 +47,17 @@ export function normalizePerson(input, id) {
 export function normalizeSlide(input, index = 0, depth = 0) {
   const slide = object(input);
   if (!['app_scene', 'composition', 'wa_chat', 'wa_group', 'x_tweet', 'x_thread', 'x_dm', 'ig_dm', 'ig_post', 'ig_story', 'lockscreen', 'custom_app'].includes(slide.type)) {
-    throw new Error(`Format slide ${index + 1} tidak dikenal.`);
+    throw storyError('Format slide {n} tidak dikenal.', { n: index + 1 });
   }
   const content = { ...object(slide.content) };
   const validate = value => {
     if (!value || typeof value !== 'object') return;
     for (const [key, child] of Object.entries(value)) {
       if (/^(text|caption|name|title|handle|song|artist|bio|time|timestamp|statusText|dateLabel|draftText|.*Url|avatar|src|url|emoji|.*Count|.*Name|.*Text|duration|voiceDuration|phoneNumber|address|fileSize|fileType|fileName|description|prompt)$/.test(key) && child != null && typeof child === 'object') {
-        throw new Error(`Isi ${key} pada slide ${index + 1} harus berupa teks.`);
+        throw storyError('Isi {field} pada slide {n} harus berupa teks.', { field: key, n: index + 1 });
       }
       if (key === 'labels' && Object.values(object(child)).some(label => label != null && typeof label === 'object')) {
-        throw new Error(`Label pada slide ${index + 1} harus berupa teks.`);
+        throw storyError('Label pada slide {n} harus berupa teks.', { n: index + 1 });
       }
       if (key === 'options') value[key] = Array.isArray(child) ? child.filter(item => item && typeof item === 'object') : [];
       validate(child);
@@ -82,8 +83,8 @@ export function normalizeSlide(input, index = 0, depth = 0) {
   validate(state);
   const screen = state.screen || content.screen || identity.screen;
   const app = appDefinition(identity.app);
-  if (slide.type === 'app_scene' && !app) throw new Error('Pilih aplikasi yang dikenal untuk adegan ini.');
-  if (app && screen && !app.screens.includes(screen)) throw new Error(`Layar ${screen} tidak tersedia untuk ${app.name}.`);
+  if (slide.type === 'app_scene' && !app) throw storyError('Pilih aplikasi yang dikenal untuk adegan ini.');
+  if (app && screen && !app.screens.includes(screen)) throw storyError('Layar {screen} tidak tersedia untuk {app}.', { screen, app: app.name });
   const viewport = object(slide.viewport);
   const normalized = { ...slide, id: String(slide.id || `slide-${index}`), order: index + 1,
     renderVersion: slide.renderVersion === 2 ? 2 : slide.renderVersion === 3 || ['app_scene', 'composition'].includes(slide.type) ? 3 : 2,
@@ -96,13 +97,13 @@ export function normalizeSlide(input, index = 0, depth = 0) {
   if (normalized.customSettings.phoneModel != null) normalized.customSettings.phoneModel = String(normalized.customSettings.phoneModel);
   if (normalized.customSettings.locale != null) normalized.customSettings.locale = normalized.customSettings.locale === 'en' ? 'en' : 'id';
   if (normalized.type === 'composition') {
-    if (depth) throw new Error('Kolase tidak boleh memuat kolase lain. Pilih adegan layar sebagai sumber.');
+    if (depth) throw storyError('Kolase tidak boleh memuat kolase lain. Pilih adegan layar sebagai sumber.');
     const composition = object(slide.composition);
     normalized.composition = { ...composition, width: finite(composition.width, 900, 100, 4096),
       height: finite(composition.height, 1200, 100, 4096), background: composition.background || '#ffffff',
       items: (Array.isArray(composition.items) ? composition.items : []).map((value, i) => {
         const item = object(value);
-        if (!item.snapshot?.slide) throw new Error('Bagian kolase tidak memiliki salinan adegan.');
+        if (!item.snapshot?.slide) throw storyError('Bagian kolase tidak memiliki salinan adegan.');
         return { ...item, id: String(item.id || `part-${i}`), x: finite(item.x, 0, -4096, 4096), y: finite(item.y, 0, -4096, 4096),
           width: finite(item.width, 390, 1, 4096), height: finite(item.height, 844, 1, 4096),
           snapshot: { ...item.snapshot, globalSettings: object(item.snapshot.globalSettings),
@@ -114,7 +115,7 @@ export function normalizeSlide(input, index = 0, depth = 0) {
 }
 
 export function captureScene(slide, project) {
-  if (slide.type === 'composition') throw new Error('Pilih adegan layar sebagai sumber kolase.');
+  if (slide.type === 'composition') throw storyError('Pilih adegan layar sebagai sumber kolase.');
   const characters = slide.charactersSnapshot || [...project.characters, { id: 'me', ...project.selfCharacter }];
   return structuredClone({ slide: { ...slide, charactersSnapshot: characters,
     customSettings: { ...project.globalSettings, ...slide.customSettings } },

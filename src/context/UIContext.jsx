@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { english } from '../data/interfaceText';
+import { english, translate } from '../data/interfaceText';
 
 const UIContext = createContext(null);
 export const readPreference = (key, fallback) => {
@@ -8,11 +8,6 @@ export const readPreference = (key, fallback) => {
 export const savePreference = (key, value) => {
   try { localStorage.setItem(key, value); } catch { /* Browser preferences are optional; stories use IndexedDB. */ }
 };
-
-export function translate(text, locale, values = {}) {
-  const template = locale === 'en' ? english[text] || text : text;
-  return String(template ?? '').replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match);
-}
 
 export function UIProvider({ children }) {
   const [locale, setLocale] = useState(() => readPreference('auverie_language', 'id') === 'en' ? 'en' : 'id');
@@ -30,7 +25,7 @@ export function UIProvider({ children }) {
     document.documentElement.dataset.studioTheme = theme;
   }, [theme]);
   const t = (text, values) => translate(text, locale, values);
-  const errorText = error => t(error?.code || error?.message || 'Terjadi masalah. Coba lagi.', error?.details);
+  const errorText = error => t(error?.code || (Object.hasOwn(english, error?.message) ? error.message : 'Terjadi masalah. Coba lagi.'), error?.details);
   return <UIContext.Provider value={{ locale, setLocale, theme, setTheme, t, errorText }}>{children}</UIContext.Provider>;
 }
 

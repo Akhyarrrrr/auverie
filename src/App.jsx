@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Layers3, MonitorSmartphone, Plus, Settings2, Users, ZoomIn, ZoomOut } from 'lucide-react';
 import { useProject } from './context/ProjectContext';
-import { useUI } from './context/UIContext';
+import { readPreference, savePreference, useUI } from './context/UIContext';
+import Onboarding from './components/Onboarding';
 import Home, { InfoPage } from './components/Home';
 import { Brand } from './components/InterfaceControls';
 import StudioHeader from './components/studio/StudioHeader';
@@ -25,6 +26,7 @@ export default function App() {
   const [zoom, setZoom] = useState(1), [stageSize, setStageSize] = useState({ width: 380, height: 660 });
   const [scriptOpen, setScriptOpen] = useState(false), [exportOpen, setExportOpen] = useState(false);
   const [outputPreview, setOutputPreview] = useState(false), [outputSurface, setOutputSurface] = useState('screen');
+  const [guideOpen, setGuideOpen] = useState(false);
   const stageRef = useRef(null);
   const editor = route === '#/editor' && Boolean(project);
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function App() {
   if (!ready) return <main className="loading-screen" role="status"><Brand /><span className="loading-line" /><p>{t('Menyiapkan ruang ceritamu…')}</p></main>;
   if (loadError) return <main className="loading-screen"><Brand /><p role="alert">{t('Penyimpanan browser tidak dapat dibuka. Coba muat ulang atau gunakan browser biasa.')}</p><button className="button primary" onClick={retryLoad}>{t('Coba lagi')}</button></main>;
   if (route === '#/help' || route === '#/about') return <InfoPage about={route === '#/about'} />;
-  if (!editor && ['#/', '#/examples', '#/editor'].includes(route)) return <Home onEnter={() => { setMobileView('preview'); setZoom(1); setOutputPreview(false); location.hash = '/editor'; }} />;
+  if (!editor && ['#/', '#/examples', '#/editor'].includes(route)) return <Home onEnter={first => { setMobileView('preview'); setZoom(1); setOutputPreview(false); if (first && !readPreference('auverie_onboarding_v1', '')) setGuideOpen(true); location.hash = '/editor'; }} />;
   if (!editor) return <main className="loading-screen"><Brand /><h1>{t('Halaman tidak ditemukan.')}</h1><p>{t('Buka beranda untuk melanjutkan ceritamu.')}</p><a className="button primary" href="#/">{t('Kembali ke beranda')}</a></main>;
 
   const isOutput = outputPreview || activeSlide?.type === 'composition';
@@ -62,11 +64,11 @@ export default function App() {
     if (window.matchMedia('(max-width: 960px)').matches) setMobileView('edit');
   };
   return <div className="studio-layout">
-    <StudioHeader onOpenScript={() => setScriptOpen(true)} onOpenExport={() => setExportOpen(true)} />
+    <StudioHeader onOpenScript={() => setScriptOpen(true)} onOpenExport={() => setExportOpen(true)} onGuide={() => setGuideOpen(true)} />
     <div className="studio-body">
       <aside className={'workspace-left mobile-' + mobileView}>
-        <div className="workspace-tabs" role="tablist" aria-label={t('Area kerja')}>
-          {[[ 'scenes', 'Slide', Layers3 ], [ 'characters', 'Tokoh', Users ], [ 'device', 'HP', MonitorSmartphone ]].map(([tab, label, Icon]) => <button key={tab} role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}><Icon size={16} />{t(label)}</button>)}
+        <div className="workspace-tabs" role="group" aria-label={t('Area kerja')}>
+          {[[ 'scenes', 'Slide', Layers3 ], [ 'characters', 'Tokoh', Users ], [ 'device', 'HP', MonitorSmartphone ]].map(([tab, label, Icon]) => <button key={tab} aria-pressed={activeTab === tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}><Icon size={16} />{t(label)}</button>)}
         </div><div className="workspace-left-content">{activeTab === 'scenes' ? <StoryboardStrip onSelectSlide={() => setMobileView('preview')} /> : activeTab === 'characters' ? <CharacterManager /> : <DeviceSettingsPanel />}</div>
       </aside>
       <main className={'canvas-viewport mobile-' + mobileView}>
@@ -90,6 +92,7 @@ export default function App() {
     </div><nav className="mobile-nav" aria-label={t('Navigasi editor')}>
       {[[ 'slides', 'Slide', Layers3 ], [ 'preview', 'Pratinjau', MonitorSmartphone ], [ 'edit', 'Edit', Settings2 ]].map(([view, label, Icon]) => <button key={view} className={mobileView === view ? 'active' : ''} onClick={() => setMobileView(view)}><Icon size={19} />{t(label)}</button>)}
     </nav><QuickScriptModal isOpen={scriptOpen} onClose={() => setScriptOpen(false)} />
-    {exportOpen && <Suspense fallback={<div className="dialog-backdrop" role="status">{t('Menyiapkan unduhan…')}</div>}><ExportDialog onClose={() => setExportOpen(false)} /></Suspense>}
+    {exportOpen && <Suspense fallback={<div className="dialog-backdrop"><div className="download-loading" role="status"><Brand compact /><p>{t('Menyiapkan unduhan…')}</p></div></div>}><ExportDialog onClose={() => setExportOpen(false)} /></Suspense>}
+    {guideOpen && <Onboarding onClose={() => { setGuideOpen(false); savePreference('auverie_onboarding_v1', 'seen'); }} />}
   </div>;
 }

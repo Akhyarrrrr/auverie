@@ -29,7 +29,7 @@ export default function StudioHeader({ onOpenScript, onOpenExport, onGuide }) {
   }, [menuOpen]);
   const run = async action => {
     try { setError(''); await action(); setMenuOpen(false); }
-    catch (cause) { setError(errorText(cause)); }
+    catch (cause) { setError(cause); }
   };
   const goHome = async () => { await saveNow(); location.hash = '/'; };
   const loadFile = async event => {
@@ -50,9 +50,10 @@ export default function StudioHeader({ onOpenScript, onOpenExport, onGuide }) {
         {menuOpen && <div className="menu-popover" id="story-menu">
           <button onClick={() => run(goHome)}>{t('Semua cerita')}</button>
           <button onClick={() => run(() => createProject(t('Cerita baru')))}>{t('Buat cerita')}</button>
+          <button onClick={() => { setMenuOpen(false); onOpenScript(); }}><FileText size={16} />{t('Naskah Cepat')}</button>
           <button disabled={backupBusy} onClick={() => run(async () => {
             setBackupBusy(true);
-            try { const failures = await downloadProjectAsJson(project); if (failures.length) setError(t('File tersimpan. {n} gambar masih memakai tautan luar. Unggah gambar tersebut agar ikut tersimpan dalam file cerita.', { n: failures.length })); }
+            try { const failures = await downloadProjectAsJson(project); if (failures.length) setError({ code: 'File tersimpan. {n} gambar masih memakai tautan luar. Unggah gambar tersebut agar ikut tersimpan dalam file cerita.', details: { n: failures.length } }); }
             finally { setBackupBusy(false); }
           })}><FileDown size={16} />{t(backupBusy ? 'Menyiapkan file…' : 'Simpan file cerita')}</button>
           <p>{t('File untuk melanjutkan edit, bukan gambar. Format .aujson.')}</p>
@@ -60,10 +61,10 @@ export default function StudioHeader({ onOpenScript, onOpenExport, onGuide }) {
           <button onClick={() => { setMenuOpen(false); if (onGuide) onGuide(); else location.hash = '/help'; }}><HelpCircle size={16} />{t('Panduan singkat')}</button>
           <a href="#/help">{t('Bantuan')}</a>
         </div>}
-      </div><button className="button primary header-download" onClick={onOpenExport}><Download size={17} /><span>{t('Unduh gambar')}</span></button>
+      </div><button className="button primary header-download" aria-label={t('Unduh gambar')} onClick={onOpenExport}><Download size={17} /><span>{t('Unduh gambar')}</span></button>
     </div>
     <input ref={fileRef} className="visually-hidden" type="file" accept=".aujson,.json,application/json" aria-label={t('Buka file cerita')} onChange={loadFile} />
     {saveStatus === 'error' && <div className="save-warning" role="alert"><span>{t('Cerita tidak dapat disimpan. Unduh file cerita sebagai cadangan, lalu coba lagi.')}</span><button className="text-button" onClick={() => run(saveNow)}>{t('Coba lagi')}</button></div>}
-    {error && <div className="header-error" role="alert">{error}<button onClick={() => setError('')} aria-label={t('Tutup pesan')}>×</button></div>}
+    {error && <div className="header-error" role="alert">{errorText(error)}<button onClick={() => setError('')} aria-label={t('Tutup pesan')}>×</button></div>}
   </header>;
 }

@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { finite } from '../../services/sceneModel';
+import { useUI } from '../../context/UIContext';
 
 const loadImage = source => new Promise((resolve, reject) => {
   const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error('Gambar tidak dapat dibaca.')); image.src = source;
 });
 
 export default function StickerEditor({ source, onSave, onCancel }) {
+  const { t } = useUI();
   const canvasRef = useRef(null), undoRef = useRef([]), gesture = useRef(null);
   const [size, setSize] = useState({ width: 1, height: 1 });
   const [crop, setCrop] = useState({ x: 0, y: 0, width: 1, height: 1 });
   const [mode, setMode] = useState('erase'), [brush, setBrush] = useState(24);
   const [outline, setOutline] = useState(0), [color, setColor] = useState('#ffffff');
-  const [name, setName] = useState('Stiker baru'), [exportWidth, setExportWidth] = useState(512);
+  const [name, setName] = useState(() => t('Stiker baru')), [exportWidth, setExportWidth] = useState(512);
   const [error, setError] = useState(''), [busy, setBusy] = useState(true), [revision, setRevision] = useState(0);
   const sync = () => {
     const canvas = canvasRef.current;
@@ -88,21 +90,21 @@ export default function StickerEditor({ source, onSave, onCancel }) {
     finally { setBusy(false); }
   };
   return <div className="sticker-editor">
-    <p className="field-hint">Geser kuas untuk menghapus latar. Pilih Potong lalu tarik kotak pada gambar. Pola kotak menunjukkan area transparan.</p>
-    <div className="mode-switch" role="group" aria-label="Alat stiker"><button className={mode === 'erase' ? 'active' : ''} onClick={() => setMode('erase')}>Kuas hapus</button><button className={mode === 'crop' ? 'active' : ''} onClick={() => setMode('crop')}>Potong</button></div>
+    <p className="field-hint">{t('Geser kuas untuk menghapus latar. Pilih Potong lalu tarik kotak pada gambar. Pola kotak menunjukkan area transparan.')}</p>
+    <div className="mode-switch" role="group" aria-label={t('Alat stiker')}><button className={mode === 'erase' ? 'active' : ''} onClick={() => setMode('erase')}>{t('Kuas hapus')}</button><button className={mode === 'crop' ? 'active' : ''} onClick={() => setMode('crop')}>{t('Potong')}</button></div>
     <div className="sticker-canvas-wrap"><div style={{ position: 'relative', width: 'fit-content', margin: 'auto' }}>
-      <canvas ref={canvasRef} aria-label="Gambar stiker, tarik untuk menghapus atau memilih potongan" onPointerDown={down} onPointerMove={move} onPointerUp={stop} onPointerCancel={stop} />
+      <canvas ref={canvasRef} aria-label={t('Gambar stiker, tarik untuk menghapus atau memilih potongan')} onPointerDown={down} onPointerMove={move} onPointerUp={stop} onPointerCancel={stop} />
       {mode === 'crop' && <div className="sticker-crop-box" style={{ left: `${crop.x / size.width * 100}%`, top: `${crop.y / size.height * 100}%`, width: `${crop.width / size.width * 100}%`, height: `${crop.height / size.height * 100}%` }} />}
     </div></div>
-    <div className="field-row"><label className="field"><span>Nama koleksi</span><input value={name} onChange={event => setName(event.target.value)} /></label>
-      <label className="field"><span>Ukuran kuas (px)</span><input type="number" min="1" max="200" value={brush} onChange={event => setBrush(Math.max(1, Math.min(200, Number(event.target.value))))} /></label></div>
-    {mode === 'crop' && <><div className="field-row">{Object.keys(crop).map(key => <label className="field" key={key}><span>{key} (px)</span><input type="number" value={Math.round(crop[key])} onChange={event => setCrop({ ...crop, [key]: Number(event.target.value) })} /></label>)}</div>
-      <button className="button secondary" disabled={busy} onClick={applyCrop}>Terapkan potongan</button></>}
-    <div className="field-row"><label className="field"><span>Warna outline / siluet</span><input type="color" value={color} onChange={event => setColor(event.target.value)} /></label>
-      <label className="field"><span>Outline (px)</span><input type="number" min="0" max="24" value={outline} onChange={event => setOutline(Number(event.target.value))} /></label>
-      <label className="field"><span>Lebar hasil (px)</span><input type="number" min="24" max="2048" value={exportWidth} onChange={event => setExportWidth(Number(event.target.value))} /></label></div>
-    <div className="field-row"><button className="button secondary" disabled={busy} onClick={silhouette}>Jadikan siluet</button><button className="button secondary" disabled={busy || !undoRef.current.length || !revision} onClick={undo}>Urungkan edit stiker</button></div>
-    {error && <p role="alert" className="inline-error">{error}</p>}
-    <div className="dialog-footer"><button className="button secondary" onClick={onCancel}>Batal</button><button className="button primary" disabled={busy} onClick={save}>Simpan dan gunakan stiker</button></div>
+    <div className="field-row"><label className="field"><span>{t('Nama koleksi')}</span><input value={name} onChange={event => setName(event.target.value)} /></label>
+      <label className="field"><span>{t('Ukuran kuas (px)')}</span><input type="number" min="1" max="200" value={brush} onChange={event => setBrush(Math.max(1, Math.min(200, Number(event.target.value))))} /></label></div>
+    {mode === 'crop' && <><div className="field-row">{[['x', 'Potongan kiri (px)'], ['y', 'Potongan atas (px)'], ['width', 'Lebar potongan (px)'], ['height', 'Tinggi potongan (px)']].map(([key, label]) => <label className="field" key={key}><span>{t(label)}</span><input type="number" value={Math.round(crop[key])} onChange={event => setCrop({ ...crop, [key]: Number(event.target.value) })} /></label>)}</div>
+      <button className="button secondary" disabled={busy} onClick={applyCrop}>{t('Terapkan potongan')}</button></>}
+    <div className="field-row"><label className="field"><span>{t('Warna outline / siluet')}</span><input type="color" value={color} onChange={event => setColor(event.target.value)} /></label>
+      <label className="field"><span>{t('Ketebalan outline (px)')}</span><input type="number" min="0" max="24" value={outline} onChange={event => setOutline(Number(event.target.value))} /></label>
+      <label className="field"><span>{t('Lebar hasil (px)')}</span><input type="number" min="24" max="2048" value={exportWidth} onChange={event => setExportWidth(Number(event.target.value))} /></label></div>
+    <div className="field-row"><button className="button secondary" disabled={busy} onClick={silhouette}>{t('Jadikan siluet')}</button><button className="button secondary" disabled={busy || !undoRef.current.length || !revision} onClick={undo}>{t('Urungkan edit stiker')}</button></div>
+    {error && <p role="alert" className="inline-error">{t(error)}</p>}
+    <div className="dialog-footer"><button className="button secondary" onClick={onCancel}>{t('Batal')}</button><button className="button primary" disabled={busy} onClick={save}>{t('Simpan dan gunakan stiker')}</button></div>
   </div>;
 }

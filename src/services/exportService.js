@@ -1,6 +1,7 @@
 import { toBlob } from 'html-to-image';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { storyError } from './errors.js';
 
 // Filter out control UI / drag handles from export
 function filterNodes(node) {
@@ -8,7 +9,7 @@ function filterNodes(node) {
 }
 
 export async function exportElementAsBlob(element, pixelRatio = 2) {
-  if (!element) throw new Error('Element tidak ditemukan');
+  if (!element) throw storyError('Pratinjau belum siap. Tutup lalu buka kembali Unduh gambar.');
   // html-to-image rounds computed font sizes down by 0.1px when cloning in Chromium.
   const prefix = crypto.randomUUID(), nodes = [element, ...element.querySelectorAll('*')];
   const previous = nodes.map(node => node.getAttribute('data-export-font'));
@@ -21,7 +22,7 @@ export async function exportElementAsBlob(element, pixelRatio = 2) {
   element.append(exactFonts);
   try {
     const blob = await toBlob(element, { pixelRatio, filter: filterNodes, skipFonts: false });
-    if (!blob) throw new Error('Gambar gagal dibuat. Periksa gambar yang digunakan pada slide.');
+    if (!blob) throw storyError('Gambar gagal dibuat. Periksa gambar yang digunakan pada slide.');
     return blob;
   } finally {
     exactFonts.remove();
@@ -31,7 +32,7 @@ export async function exportElementAsBlob(element, pixelRatio = 2) {
 
 export async function checkExportAssets(element) {
   if (element.querySelector('.wa-media-placeholder, [data-missing-asset]')) {
-    throw new Error('Ada foto, album, atau stiker yang belum diisi. Pilih / unggah gambar lewat panel Edit.');
+    throw storyError('Ada foto, album, atau stiker yang belum diisi. Pilih / unggah gambar lewat panel Edit.');
   }
   const sources = new Set();
   for (const node of [element, ...element.querySelectorAll('*')]) {
@@ -45,15 +46,15 @@ export async function checkExportAssets(element) {
       const response = await fetch(source, { mode: 'cors', signal: AbortSignal.timeout(10000) });
       if (!response.ok) throw new Error('HTTP ' + response.status);
     } catch {
-      throw new Error(`Gambar tidak bisa diekspor: ${source.slice(0, 140)}. Unggah berkas pengganti melalui panel Edit.`);
+      throw storyError('Gambar tidak bisa diunduh: {source}. Unggah berkas pengganti melalui panel Edit.', { source: source.slice(0, 140) });
     }
   }));
   await Promise.all([...element.querySelectorAll('img')].map(image => image.decode().catch(() => {
-    throw new Error(`Gambar “${image.alt || 'tanpa nama'}” gagal dimuat (${image.src.slice(0, 100)}). Unggah berkas pengganti di panel Edit.`);
+    throw storyError('Gambar gagal dimuat: {source}. Unggah berkas pengganti di panel Edit.', { source: image.src.slice(0, 100) });
   })));
   await Promise.all([...sources].map(async source => {
     const image = new Image(); image.src = source;
-    try { await image.decode(); } catch { throw new Error(`Latar / gambar gagal dibaca (${source.slice(0, 100)}). Unggah berkas pengganti di panel Edit.`); }
+    try { await image.decode(); } catch { throw storyError('Latar / gambar gagal dibaca: {source}. Unggah berkas pengganti di panel Edit.', { source: source.slice(0, 100) }); }
   }));
 }
 

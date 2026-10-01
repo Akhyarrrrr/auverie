@@ -1,11 +1,13 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import { useUI } from '../../context/UIContext';
 import { paginateByHeight, parseChatScript } from '../../services/scriptParser';
 import PhoneContainer from '../phone/PhoneContainer';
 import { useDialogFocus } from './AssetPickerModal';
 
 export default function QuickScriptModal({ isOpen, onClose }) {
+  const { t } = useUI();
   const { project, setProject, setActiveSlideIndex } = useProject();
   const [script, setScript] = useState('');
   const [platform, setPlatform] = useState('wa_chat');
@@ -78,31 +80,31 @@ export default function QuickScriptModal({ isOpen, onClose }) {
 
   return <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section ref={dialog} className="script-dialog" role="dialog" aria-modal="true" aria-labelledby="script-title">
-      <div className="dialog-heading"><div><h2 id="script-title">Naskah Cepat</h2>
-        <p>Tulis satu pesan per baris. Lihat pembagian slide sebelum menambahkan ke cerita.</p></div>
-        <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={19} /></button></div>
+      <div className="dialog-heading"><div><h2 id="script-title">{t('Naskah Cepat')}</h2>
+        <p>{t('Tulis satu pesan per baris. Lihat pembagian slide sebelum menambahkan ke cerita.')}</p></div>
+        <button className="icon-button" onClick={onClose} aria-label={t('Tutup')}><X size={19} /></button></div>
       <div className="script-content">
-        <label className="field"><span>Tampilan chat</span><select aria-label="Tampilan chat" value={platform} onChange={event => { setPlatform(event.target.value); setDraft(null); }}>
-          <option value="wa_chat">WhatsApp chat</option><option value="wa_group">WhatsApp grup</option>
+        <label className="field"><span>{t('Tampilan chat')}</span><select aria-label={t('Tampilan chat')} value={platform} onChange={event => { setPlatform(event.target.value); setDraft(null); }}>
+          <option value="wa_chat">WhatsApp chat</option><option value="wa_group">{t('WhatsApp grup')}</option>
           <option value="ig_dm">Instagram DM</option></select></label>
-        <label className="field"><span>Dialog</span><textarea aria-label="Dialog" rows={9} value={script} onChange={event => { setScript(event.target.value); setDraft(null); }}
-          placeholder={'Aku: Kamu sudah sampai?\nReyhan: Sudah, tunggu sebentar.\nReyhan: [vn:0:24]'} /></label>
-        <p className="field-hint">Gunakan <code>Nama: Pesan</code>. Untuk WhatsApp, <code>[vn:0:24]</code> membuat tampilan voice note.</p>
-        <button className="button secondary" onClick={preview}>Pratinjau pembagian</button>
-        {error && <p className="inline-error" role="alert">{error}</p>}
+        <label className="field"><span>{t('Dialog')}</span><textarea aria-label={t('Dialog')} rows={9} value={script} onChange={event => { setScript(event.target.value); setDraft(null); }}
+          placeholder={t('Aku: Kamu sudah sampai?\nReyhan: Sudah, tunggu sebentar.\nReyhan: [vn:0:24]')} /></label>
+        <p className="field-hint">{t('Format: Nama: Pesan. Untuk WhatsApp, [vn:0:24] membuat tampilan voice note.')}</p>
+        <button className="button secondary" onClick={preview}>{t('Pratinjau pembagian')}</button>
+        {error && <p className="inline-error" role="alert">{t(error)}</p>}
         {draft && <div className="script-preview">
-          {!!draft.invalidLines.length && <div className="inline-error" role="alert"><strong>Perbaiki baris berikut:</strong>
-            {draft.invalidLines.map(item => <p key={item.line}>Baris {item.line}: {item.text}</p>)}</div>}
-          {!!oversized.length && <p className="inline-error" role="alert">Pesan {oversized.join(', ')} lebih tinggi dari layar. Ringkas pesan tersebut.</p>}
-          <h3>{pages.length ? pages.length + ' slide akan dibuat' : 'Mengukur isi slide…'}</h3>
+          {!!draft.invalidLines.length && <div className="inline-error" role="alert"><strong>{t('Perbaiki baris berikut:')}</strong>
+            {draft.invalidLines.map(item => <p key={item.line}>{t('Baris {n}', { n: item.line })}: {item.text}</p>)}</div>}
+          {!!oversized.length && <p className="inline-error" role="alert">{t('Pesan {items} lebih tinggi dari layar. Ringkas pesan tersebut.', { items: oversized.join(', ') })}</p>}
+          <h3>{pages.length ? t('{n} slide akan dibuat', { n: pages.length }) : t('Mengukur isi slide…')}</h3>
           {pages.map((page, index) => <div className="script-page" key={index}>
-            <strong>Slide {index + 1} · {page.length} pesan</strong>
+            <strong>{t('Slide {n} · {count} pesan', { n: index + 1, count: page.length })}</strong>
             <span>{page.map(item => item.text || '[voice note]').join(' · ')}</span>
           </div>)}
         </div>}
       </div>
-      <div className="dialog-footer"><button className="button secondary" onClick={onClose}>Batal</button>
-        <button className="button primary" disabled={!pages.length || !!draft?.invalidLines.length || !!oversized.length} onClick={create}>Tambahkan slide</button></div>
+      <div className="dialog-footer"><button className="button secondary" onClick={onClose}>{t('Batal')}</button>
+        <button className="button primary" disabled={!pages.length || !!draft?.invalidLines.length || !!oversized.length} onClick={create}>{t('Tambahkan slide')}</button></div>
     </section>
     {measureSlide && <div className="offscreen-export script-measure"><PhoneContainer slide={measureSlide}
       previewCharacters={draft.newCharacters} ref={measureRef} zoom={1} /></div>}

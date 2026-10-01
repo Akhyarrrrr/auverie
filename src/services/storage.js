@@ -1,6 +1,7 @@
 import { openDB } from 'idb';
 import { DEFAULT_GLOBAL_SETTINGS } from '../data/samplePresets.js';
 import { normalizePerson, normalizeSlide, SCHEMA_VERSION } from './sceneModel.js';
+import { storyError } from './errors.js';
 
 const DB_NAME = 'au_studio_db';
 const DB_VERSION = 1;
@@ -19,9 +20,10 @@ async function getDb() {
 
 export function normalizeProject(input) {
   if (!input || !Array.isArray(input.slides) || !Array.isArray(input.characters)) {
-    throw new Error('Berkas proyek tidak memiliki daftar slide dan karakter yang valid.');
+    throw storyError('Berkas proyek tidak memiliki daftar slide dan karakter yang valid.');
   }
-  if (input.characters.some(person => !person || typeof person !== 'object' || Array.isArray(person))) throw new Error('Daftar karakter berisi data yang tidak valid.');
+  if (input.characters.some(person => !person || typeof person !== 'object' || Array.isArray(person))) throw storyError('Daftar karakter berisi data yang tidak valid.');
+  if (!input.slides.length) throw storyError('Cerita harus memiliki setidaknya satu slide.');
   const settings = { ...DEFAULT_GLOBAL_SETTINGS, ...(input.globalSettings || {}) };
   settings.phoneModel = String(settings.phoneModel || DEFAULT_GLOBAL_SETTINGS.phoneModel);
   const characters = input.characters.map((character, index) => normalizePerson(character, `karakter-${index}`));
@@ -103,6 +105,6 @@ export async function parseProjectJsonFile(file) {
   try {
     return normalizeProject(JSON.parse(await file.text()));
   } catch (error) {
-    throw new Error(error instanceof SyntaxError ? 'Berkas ini bukan JSON yang valid.' : error.message);
+    throw error instanceof SyntaxError ? storyError('File cerita tidak dapat dibuka. Pilih file .aujson yang pernah kamu simpan.') : error;
   }
 }

@@ -1,10 +1,12 @@
 import { forwardRef, useRef, useState } from 'react';
 import { ProjectProvider, useProject } from '../../context/ProjectContext';
+import { useUI } from '../../context/UIContext';
 import { sceneCrop, deviceMetrics, outputDimensions } from '../../services/sceneModel';
 import PhoneContainer from './PhoneContainer';
 
 const OutputRenderer = forwardRef(function RenderedOutput({ slide, surface = 'screen', zoom = 1, interactive = false, editable = false }, ref) {
   const { project, updateSlideMeta, setEditTarget, editTarget } = useProject();
+  const ui = useUI();
   const gesture = useRef(null), [drag, setDrag] = useState(null);
   const movePart = (id, updates) => updateSlideMeta(slide.id, previous => ({ composition: { ...previous.composition,
     items: previous.composition.items.map(item => item.id === id ? { ...item, ...updates } : item) } }));
@@ -20,7 +22,7 @@ const OutputRenderer = forwardRef(function RenderedOutput({ slide, surface = 'sc
       const sourceSurface = item.surface || surface;
       const size = outputDimensions(source, snapshot.globalSettings, sourceSurface);
       return <div className={`composition-part ${editable && editTarget === `part:${item.id}` ? 'selected' : ''}`} key={item.id} data-edit-target={`part:${item.id}`}
-        tabIndex={editable ? 0 : undefined} aria-label={editable ? `Bagian kolase ${snapshot.slide.title}. Gunakan tombol panah untuk menggeser.` : undefined}
+        tabIndex={editable ? 0 : undefined} aria-label={editable ? ui?.t('Bagian kolase {title}. Gunakan tombol panah untuk menggeser.', { title: snapshot.slide.title }) || `Bagian kolase ${snapshot.slide.title}` : undefined}
         onPointerDown={editable ? event => { if (event.button !== 0) return; event.currentTarget.setPointerCapture(event.pointerId);
           gesture.current = { id: item.id, x: item.x, y: item.y, clientX: event.clientX, clientY: event.clientY }; setEditTarget(`part:${item.id}`); } : undefined}
         onPointerMove={editable ? event => { const g = gesture.current; if (!g || g.id !== item.id) return;

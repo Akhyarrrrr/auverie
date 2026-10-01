@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Download, X } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import { useUI } from '../../context/UIContext';
+import { storyError } from '../../services/errors';
 import OutputRenderer from '../phone/OutputRenderer';
 import { outputDimensions } from '../../services/sceneModel';
 import { useDialogFocus } from './AssetPickerModal';
@@ -17,6 +19,7 @@ function saveBlob(blob, filename) {
 }
 
 export default function ExportDialog({ onClose }) {
+  const { t, errorText } = useUI();
   const { project, activeSlideIndex, setActiveSlideIndex, setEditTarget } = useProject();
   const [surface, setSurface] = useState('screen');
   const [scope, setScope] = useState('current');
@@ -33,19 +36,19 @@ export default function ExportDialog({ onClose }) {
 
   const renderBlob = async (slide, index) => {
     setFailedIndex(index);
-    if (slide.type === 'composition' && !slide.composition.items.length) throw new Error('Kolase belum memiliki bagian. Tambahkan adegan dari panel Edit.');
+    if (slide.type === 'composition' && !slide.composition.items.length) throw storyError('Kolase belum memiliki bagian. Tambahkan adegan dari panel Edit.');
     if (slide.type === 'ig_post' && !slide.content?.imageUrl) {
-      throw new Error('Slide ' + (index + 1) + ' belum memiliki foto postingan. Tambahkan foto lewat panel Edit.');
+      throw storyError('Slide {n} belum memiliki foto postingan. Tambahkan foto lewat panel Edit.', { n: index + 1 });
     }
     if (slide.type === 'custom_app' && slide.content?.elements?.some(item => item.type === 'image' && !item.src)) {
-      throw new Error('Slide ' + (index + 1) + ' memiliki blok gambar kosong. Pilih gambar lewat panel Edit.');
+      throw storyError('Slide {n} memiliki blok gambar kosong. Pilih gambar lewat panel Edit.', { n: index + 1 });
     }
     flushSync(() => setRenderSlide(slide));
     await document.fonts.ready;
     const target = screenRef.current;
     await checkExportAssets(target);
     if (hasHiddenContent(target)) {
-      throw new Error('Slide ' + (index + 1) + ' memiliki isi di luar layar. Atur posisi layar, bagi ke adegan berikutnya, atau tandai pemotongan yang disengaja di panel Edit.');
+      throw storyError('Slide {n} memiliki isi di luar layar. Atur posisi layar, bagi ke adegan berikutnya, atau tandai pemotongan yang disengaja di panel Edit.', { n: index + 1 });
     }
     const size = outputDimensions(slide, project.globalSettings, surface);
     return exportElementAsBlob(target, Math.min(resolution, 4096 / Math.max(size.width, size.height)));
@@ -57,19 +60,19 @@ export default function ExportDialog({ onClose }) {
     try {
       if (scope === 'all') {
         await batchExportSlidesAsZip(project.slides, async (slide, index) => {
-          setProgress('Memproses slide ' + (index + 1) + ' dari ' + project.slides.length);
+          setProgress(t('Memproses slide {current} dari {total}', { current: index + 1, total: project.slides.length }));
           return renderBlob(slide, index);
         }, project.title + '_' + surface);
-        setProgress('ZIP berhasil diunduh.');
+        setProgress(t('ZIP berhasil diunduh.'));
       } else {
         const slide = project.slides[activeSlideIndex];
-        setProgress('Membuat gambar…');
+        setProgress(t('Membuat gambar…'));
         const blob = await renderBlob(slide, activeSlideIndex);
         saveBlob(blob, String(activeSlideIndex + 1).padStart(2, '0') + '_' + slide.type + '_' + surface + '.png');
-        setProgress('PNG berhasil diunduh.');
+        setProgress(t('PNG berhasil diunduh.'));
       }
     } catch (cause) {
-      setError(cause.message || 'Ekspor gagal. Coba lagi.');
+      setError(errorText(cause));
       setProgress('');
     } finally {
       setBusy(false);
@@ -79,28 +82,28 @@ export default function ExportDialog({ onClose }) {
 
   return <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
     <section ref={dialog} className="export-dialog" role="dialog" aria-modal="true" aria-labelledby="export-title">
-      <div className="dialog-heading"><div><h2 id="export-title">Ekspor cerita</h2><p>Unduh hasil tanpa kontrol editor.</p></div>
-        <button className="icon-button" onClick={onClose} disabled={busy} aria-label="Tutup"><X size={19} /></button></div>
+      <div className="dialog-heading"><div><h2 id="export-title">{t('Unduh gambar')}</h2><p>{t('Gambar siap dibagikan. Untuk melanjutkan edit, pilih Simpan file cerita.')}</p></div>
+        <button className="icon-button" onClick={onClose} disabled={busy} aria-label={t('Tutup')}><X size={19} /></button></div>
       <div className="export-options">
-        <p className="field-hint">Crop dan salinan kolase ikut diekspor. Lihat “Hasil unduhan” di pratinjau untuk memeriksa komposisinya.</p>
-        <fieldset><legend>Bagian yang diunduh</legend>
-          <label><input type="radio" checked={scope === 'current'} onChange={() => setScope('current')} /> Slide ini</label>
-          <label><input type="radio" checked={scope === 'all'} onChange={() => setScope('all')} /> Semua slide (.zip)</label>
+        <p className="field-hint">{t('Potongan dan kolase mengikuti pratinjau Lihat hasil.')}</p>
+        <fieldset disabled={busy}><legend>{t('Bagian yang diunduh')}</legend>
+          <label><input type="radio" checked={scope === 'current'} onChange={() => setScope('current')} />{t('Slide ini · gambar PNG')}</label>
+          <label><input type="radio" checked={scope === 'all'} onChange={() => setScope('all')} />{t('Semua slide · kumpulan gambar ZIP')}</label>
         </fieldset>
-        <fieldset><legend>Tampilan gambar</legend>
-          <label><input type="radio" checked={surface === 'screen'} onChange={() => setSurface('screen')} /> Layar saja</label>
-          <label><input type="radio" checked={surface === 'phone'} onChange={() => setSurface('phone')} /> HP dengan bingkai</label>
+        <fieldset disabled={busy}><legend>{t('Tampilan gambar')}</legend>
+          <label><input type="radio" checked={surface === 'screen'} onChange={() => setSurface('screen')} />{t('Layar saja')}</label>
+          <label><input type="radio" checked={surface === 'phone'} onChange={() => setSurface('phone')} />{t('HP dengan bingkai')}</label>
         </fieldset>
-        <label className="field"><span>Resolusi PNG</span><select value={resolution} onChange={event => setResolution(Number(event.target.value))}>
-          <option value="1">1× ukuran layar</option><option value="2">2× · tajam</option><option value="3">3× · paling tajam</option></select></label>
-        <p className="field-hint">Slide ini: {dimensions.width} × {dimensions.height} px logis. Sisi terpanjang hasil dibatasi 4096 px.</p>
+        <label className="field"><span>{t('Ketajaman gambar')}</span><select disabled={busy} value={resolution} onChange={event => setResolution(Number(event.target.value))}>
+          <option value="1">{t('Standar · 1×')}</option><option value="2">{t('Tajam · 2×')}</option><option value="3">{t('Paling tajam · 3×')}</option></select></label>
+        <p className="field-hint">{t('Ukuran gambar: {width} × {height} piksel. Sisi terpanjang maksimal 4096 piksel.', { width: Math.round(dimensions.width * Math.min(resolution, 4096 / Math.max(dimensions.width, dimensions.height))), height: Math.round(dimensions.height * Math.min(resolution, 4096 / Math.max(dimensions.width, dimensions.height))) })}</p>
       </div>
       {error && <div className="export-error" role="alert">{error}<button className="text-button" onClick={() => {
         setActiveSlideIndex(failedIndex ?? activeSlideIndex); setEditTarget('viewport'); onClose();
-      }}>Buka slide bermasalah / unggah gambar pengganti</button></div>}
+      }}>{t('Perbaiki slide atau unggah gambar pengganti')}</button></div>}
       {progress && <p className="export-progress" role="status">{progress}</p>}
-      <div className="dialog-footer"><button className="button secondary" onClick={onClose} disabled={busy}>Tutup</button>
-        <button className="button primary" onClick={exportNow} disabled={busy}><Download size={17} /> {busy ? 'Mengekspor…' : 'Unduh ' + (scope === 'all' ? 'ZIP' : 'PNG')}</button></div>
+      <div className="dialog-footer"><button className="button secondary" onClick={onClose} disabled={busy}>{t('Tutup')}</button>
+        <button className="button primary" onClick={exportNow} disabled={busy}><Download size={17} />{busy ? t('Membuat gambar…') : t('Unduh {format}', { format: scope === 'all' ? 'ZIP' : 'PNG' })}</button></div>
     </section>
     <div className="offscreen-export" aria-hidden="true"><OutputRenderer ref={screenRef} slide={renderSlide} surface={surface} /></div>
   </div>;

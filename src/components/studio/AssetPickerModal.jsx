@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { AESTHETIC_AVATARS, AESTHETIC_WALLPAPERS } from '../../data/samplePresets';
 import { useProject } from '../../context/ProjectContext';
+import { useUI } from '../../context/UIContext';
 import StickerEditor from './StickerEditor';
 
 const STICKERS = [
@@ -16,11 +17,12 @@ export function useDialogFocus(dialog, onClose, open = true) {
   useEffect(() => {
     if (!open) return;
     const before = document.activeElement;
-    dialog.current?.querySelector('button,input,select,textarea')?.focus();
+    const selector = 'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary';
+    dialog.current?.querySelector(selector)?.focus();
     const key = event => {
       if (event.key === 'Escape') { event.stopPropagation(); close.current(); }
       if (event.key !== 'Tab' || !dialog.current) return;
-      const focusable = [...dialog.current.querySelectorAll('button:not(:disabled),input,select,textarea')].filter(node => node.offsetParent !== null);
+      const focusable = [...dialog.current.querySelectorAll(selector)].filter(node => node.offsetParent !== null && !node.closest('[inert]'));
       const first = focusable[0], last = focusable.at(-1);
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -31,6 +33,7 @@ export function useDialogFocus(dialog, onClose, open = true) {
 }
 
 export default function AssetPickerModal({ isOpen, onClose, onSelect, type = 'avatar', currentUrl = '' }) {
+  const { t } = useUI();
   const [tab, setTab] = useState('upload');
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
@@ -99,32 +102,32 @@ export default function AssetPickerModal({ isOpen, onClose, onSelect, type = 'av
 
   return createPortal(<div className="dialog-backdrop no-export" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
     <section ref={dialog} className="asset-dialog" role="dialog" aria-modal="true" aria-labelledby="asset-title">
-      <div className="dialog-heading"><div><h2 id="asset-title">Pilih gambar</h2><p>Gambar yang diunggah tersimpan bersama proyek di browser ini.</p></div>
-        <button className="icon-button" onClick={onClose} aria-label="Tutup"><X size={19} /></button></div>
+      <div className="dialog-heading"><div><h2 id="asset-title">{t('Pilih gambar')}</h2><p>{t('Gambar yang diunggah tersimpan bersama cerita di browser ini.')}</p></div>
+        <button className="icon-button" onClick={onClose} aria-label={t('Tutup')}><X size={19} /></button></div>
       {editing ? <StickerEditor source={editing} onCancel={() => setEditing('')} onSave={sticker => {
         setProject(previous => ({ ...previous, stickerLibrary: [...(previous.stickerLibrary || []), sticker] })); finish(sticker.url);
       }} /> : <><div className="asset-tabs">
-        <button className={tab === 'upload' ? 'active' : ''} onClick={() => setTab('upload')}>Unggah</button>
-        <button className={tab === 'gallery' ? 'active' : ''} onClick={() => setTab('gallery')}>{type === 'sticker' ? 'Koleksi dan contoh' : 'Contoh gambar'}</button>
-        <button className={tab === 'url' ? 'active' : ''} onClick={() => setTab('url')}>Tautan</button>
+        <button className={tab === 'upload' ? 'active' : ''} onClick={() => setTab('upload')}>{t('Unggah')}</button>
+        <button className={tab === 'gallery' ? 'active' : ''} onClick={() => setTab('gallery')}>{t(type === 'sticker' ? 'Koleksi dan contoh' : 'Contoh gambar')}</button>
+        <button className={tab === 'url' ? 'active' : ''} onClick={() => setTab('url')}>{t('Tautan')}</button>
       </div>
       <div className="asset-body">
-        {tab === 'upload' && <label className="upload-drop"><strong>Pilih gambar dari HP atau laptop</strong><span>JPG, PNG, WebP, GIF diam · maksimal 20 MB</span>
+        {tab === 'upload' && <label className="upload-drop"><strong>{t('Pilih gambar dari HP atau laptop')}</strong><span>{t('JPG, PNG, WebP, GIF diam · maksimal 20 MB')}</span>
           <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={chooseFile} /></label>}
         {tab === 'gallery' && <div className="asset-grid">{samples.map(item => <div className="asset-item" key={item.id}>
-          <button disabled={busy} className={currentUrl === item.url ? 'active' : ''} onClick={() => chooseSample(item)}><img src={item.url} alt="" /><span>{item.name}</span></button>
+          <button disabled={busy} className={currentUrl === item.url ? 'active' : ''} onClick={() => chooseSample(item)}><img src={item.url} alt="" /><span>{item.id.startsWith('builtin-') ? t(item.name) : item.name}</span></button>
           {type === 'sticker' && project?.stickerLibrary?.some(sticker => sticker.id === item.id) && <div className="asset-item-tools">
-            <button onClick={() => setEditing(item.url)} aria-label={`Edit stiker ${item.name}`}>Edit</button>
-            <button onClick={() => setProject(previous => ({ ...previous, stickerLibrary: previous.stickerLibrary.filter(sticker => sticker.id !== item.id) }))} aria-label={`Hapus stiker ${item.name}`}>Hapus</button>
+            <button onClick={() => setEditing(item.url)} aria-label={t('Edit stiker {name}', { name: item.name })}>{t('Edit')}</button>
+            <button onClick={() => setProject(previous => ({ ...previous, stickerLibrary: previous.stickerLibrary.filter(sticker => sticker.id !== item.id) }))} aria-label={t('Hapus stiker {name}', { name: item.name })}>{t('Hapus')}</button>
           </div>}
         </div>)}</div>}
-        {tab === 'url' && <div className="url-input"><label className="field"><span>Alamat gambar langsung</span><input type="url" value={url}
-          placeholder="https://contoh.com/gambar.jpg" onChange={event => setUrl(event.target.value)} /></label>
-          <button className="button primary" disabled={busy} onClick={chooseUrl}>{busy ? 'Memeriksa…' : 'Gunakan tautan'}</button></div>}
-        {error && <p className="inline-error" role="alert">{error}</p>}
+        {tab === 'url' && <div className="url-input"><label className="field"><span>{t('Alamat gambar langsung')}</span><input type="url" value={url}
+          placeholder="https://example.com/image.jpg" onChange={event => setUrl(event.target.value)} /></label>
+          <button className="button primary" disabled={busy} onClick={chooseUrl}>{t(busy ? 'Memeriksa…' : 'Gunakan tautan')}</button></div>}
+        {error && <p className="inline-error" role="alert">{t(error)}</p>}
         {type === 'sticker' && currentUrl && <button className="button secondary" onClick={async () => {
           try { setEditing(await toData(await (await fetch(currentUrl)).blob())); } catch { setError('Unggah stiker sebagai berkas untuk mengeditnya.'); }
-        }}>Edit stiker saat ini</button>}
+        }}>{t('Edit stiker saat ini')}</button>}
       </div></>}
     </section>
   </div>, document.body);

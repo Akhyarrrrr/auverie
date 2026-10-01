@@ -73,7 +73,7 @@ export default function Home({ onEnter }) {
     if (busy) return;
     setBusy(true); setError('');
     try { await action(); onEnter(first); }
-    catch (cause) { setError(errorText(cause)); } finally { setBusy(false); }
+    catch (cause) { setError(cause); } finally { setBusy(false); }
   };
   const chooseDemo = index => { setDemoIndex(index); demoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
   const loadFile = async event => {
@@ -107,7 +107,7 @@ export default function Home({ onEnter }) {
         </section>
       </section>
       {busy && <p role="status">{t('Menyiapkan ruang ceritamu…')}</p>}
-      {error && <p className="inline-error" role="alert">{error}</p>}
+      {error && <p className="inline-error" role="alert">{errorText(error)}</p>}
       <section className="start-steps" aria-labelledby="steps-title"><div className="section-heading"><span>01 / 03</span><h2 id="steps-title">{t('Dari ide sampai siap dibagikan')}</h2></div>
         <ol>{[['Pilih tampilan', 'Pilih aplikasi dan adegan. Chat, profil, panggilan, atau layar buatanmu sendiri.'],
           ['Susun cerita', 'Tulis pesan, tambahkan foto atau stiker, lalu simpan adegan berikutnya sebagai slide baru.'],

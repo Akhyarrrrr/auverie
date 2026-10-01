@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
+import { useUI } from '../../context/UIContext';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { SCENE_APPS, SCREEN_LABELS, MESSAGE_KINDS, MESSAGE_LABELS, sceneIdentity, isConversation } from '../../data/sceneCatalog';
@@ -8,6 +9,13 @@ import { NATIVE_ICONS } from '../mockups/SceneParts';
 
 const uid = () => crypto.randomUUID();
 const list = value => value.split(',').map(item => item.trim()).filter(Boolean);
+const ICON_LABELS = {
+  back: 'Kembali', close: 'Tutup', plus: 'Tambah', send: 'Kirim', phone: 'Telepon', video: 'Video', camera: 'Kamera', mic: 'Mikrofon',
+  sticker: 'Stiker', heart: 'Hati', chat: 'Percakapan', play: 'Putar', pause: 'Jeda', search: 'Cari', more: 'Menu lainnya',
+  check: 'Centang', checks: 'Dua centang', share: 'Bagikan', home: 'Beranda', bookmark: 'Simpan', person: 'Profil', bell: 'Notifikasi',
+  image: 'Gambar', smile: 'Emoji', info: 'Info', arrow: 'Panah kanan', up: 'Panah atas', delete: 'Hapus', file: 'Dokumen', location: 'Lokasi',
+  music: 'Musik', repeat: 'Ulang', like: 'Suka', speaker: 'Speaker', shuffle: 'Acak', previous: 'Sebelumnya', next: 'Berikutnya', return: 'Enter', keypad: 'Tombol angka'
+};
 const PALETTE = [['backgroundColor', 'Latar layar'], ['headerColor', 'Header'], ['headerTextColor', 'Teks header'],
   ['incomingColor', 'Bubble diterima'], ['incomingTextColor', 'Teks diterima'], ['outgoingColor', 'Bubble dikirim'],
   ['outgoingTextColor', 'Teks dikirim'], ['accentColor', 'Aksen / tombol'], ['inputColor', 'Kolom ketik'], ['inputTextColor', 'Teks kolom ketik'],
@@ -23,7 +31,8 @@ const colorHex = value => {
   return rgb ? '#' + rgb.slice(1, 4).map(channel => Number(channel).toString(16).padStart(2, '0')).join('') : '';
 };
 
-export function OutputSettings({ controls }) {
+export function OutputSettings({ controls, advanced }) {
+  const { t } = useUI();
   const { activeSlide: slide, project, updateSlideMeta } = useProject();
   const { Field, Choice, Toggle, Section } = controls;
   if (slide.type === 'composition') return null;
@@ -31,7 +40,8 @@ export function OutputSettings({ controls }) {
   const crop = cropRectangle(view.crop, size.width, size.height);
   const change = updates => updateSlideMeta(slide.id, { viewport: { ...view, ...updates } });
   return <Section title="Area layar dan hasil unduhan" target="viewport">
-    <p className="field-hint">Crop memotong hasil gambar tanpa mengubah baris teks. Geser percakapan di HP untuk memilih bagian cerita.</p>
+    <p className="field-hint">{t('Pilih bagian layar yang ingin dibagikan. Potongan tidak mengubah susunan teks.')}</p>
+    <div className="crop-preview"><svg viewBox={`0 0 ${size.width} ${size.height}`} role="img" aria-label={t('Bagian layar yang akan diunduh')}><rect width={size.width} height={size.height} rx="16" fill="var(--bg-tertiary)" /><rect x={crop.x} y={crop.y} width={crop.width} height={crop.height} rx="4" fill="var(--bg-glass-active)" stroke="var(--accent-primary)" strokeWidth="5" /></svg><p>{t('Area hijau masuk ke gambar. Lihat hasil untuk memeriksa isi sebenarnya.')}</p></div>
     <Choice label="Potongan layar" value={view.cropPreset || 'full'} options={[
       ['full', 'Layar penuh'], ['top', 'Setengah atas'], ['bottom', 'Setengah bawah'], ['keyboard', 'Fokus keyboard'], ['manual', 'Atur sendiri']
     ]} onChange={name => change({ cropPreset: name, crop: name === 'manual' ? crop : cropPreset(name, size.width, size.height,
@@ -41,13 +51,14 @@ export function OutputSettings({ controls }) {
         onChange={value => change({ crop: cropRectangle({ ...crop, [key]: value }, size.width, size.height) })} />)}</>}
     <Choice label="Posisi awal percakapan" value={view.anchor || 'top'} options={[[ 'top', 'Dari atas' ], [ 'bottom', 'Pesan terbaru di bawah' ]]}
       onChange={anchor => change({ anchor, scroll: 0 })} />
-    <Field label="Jarak geser layar (px)" type="number" min={0} value={view.scroll || 0} onChange={scroll => change({ scroll: Math.max(0, scroll) })} />
+    {advanced && <Field label="Jarak geser layar (px)" type="number" min={0} value={view.scroll || 0} onChange={scroll => change({ scroll: Math.max(0, scroll) })} />}
     <Toggle label="Sengaja hanya tampilkan sebagian isi" checked={view.intentional} onChange={intentional => change({ intentional })} />
-    <p className="field-hint">Matikan untuk mendapat peringatan ekspor bila ada isi yang keluar layar.</p>
+    <p className="field-hint">{t('Matikan untuk mendapat peringatan bila ada isi yang keluar layar.')}</p>
   </Section>;
 }
 
 export default function SceneInspector({ controls, image, advanced }) {
+  const { t } = useUI();
   const { project, activeSlide: slide, updateSlideContent, updateSlideMeta, editTarget, setEditTarget } = useProject();
   const { Field, Choice, Toggle, PersonChoice, Section } = controls;
   const [sourceId, setSourceId] = useState('');
@@ -70,14 +81,14 @@ export default function SceneInspector({ controls, image, advanced }) {
   const setting = (key, value) => updateSlideMeta(slide.id, { customSettings: { ...slide.customSettings, [key]: value } });
   const nested = (key, updates) => patch({ [key]: { ...c[key], ...updates } });
   const targetFor = (key, id) => `${({ messages: 'message', comments: 'comment', posts: 'post', tracks: 'track', storyStickers: 'storySticker' })[key] || key}:${id}`;
-  const collection = (key, title, fields, options = {}) => <Section title={`${title} · ${c[key]?.length || 0}`} target={key}>
+  const collection = (key, title, fields, options = {}) => <Section title={`${t(title)} · ${c[key]?.length || 0}`} target={key}>
     {(c[key] || []).map((item, index) => <details key={item.id} className={'edit-card ' + (editTarget === targetFor(key, item.id) ? 'selected' : '')}
       open={editTarget === targetFor(key, item.id)} data-field-key={targetFor(key, item.id)}>
       <summary onClick={event => { event.preventDefault(); setEditTarget(editTarget === targetFor(key, item.id) ? null : targetFor(key, item.id)); }}>{index + 1}. {item.name || item.title || item.text?.slice(0, 32) || title}</summary>
-      <div className="edit-card-heading"><span>Susun urutan</span><div>
-        <button aria-label="Ke atas" disabled={!index} onClick={() => reorder(key, index, -1)}><ArrowUp size={15} /></button>
-        <button aria-label="Ke bawah" disabled={index === c[key].length - 1} onClick={() => reorder(key, index, 1)}><ArrowDown size={15} /></button>
-        <button aria-label="Hapus" onClick={() => patch({ [key]: c[key].filter(value => value.id !== item.id) })}><Trash2 size={15} /></button>
+      <div className="edit-card-heading"><span>{t('Susun urutan')}</span><div>
+        <button aria-label={t('Ke atas')} disabled={!index} onClick={() => reorder(key, index, -1)}><ArrowUp size={15} /></button>
+        <button aria-label={t('Ke bawah')} disabled={index === c[key].length - 1} onClick={() => reorder(key, index, 1)}><ArrowDown size={15} /></button>
+        <button aria-label={t('Hapus')} onClick={() => patch({ [key]: c[key].filter(value => value.id !== item.id) })}><Trash2 size={15} /></button>
       </div></div>
       {options.person && <PersonChoice label={options.person === 'senderId' ? 'Pengirim' : 'Tokoh'} value={item[options.person]} characters={people} self
         onChange={value => changeItem(key, item.id, { [options.person]: value })} />}
@@ -90,7 +101,7 @@ export default function SceneInspector({ controls, image, advanced }) {
       </>}
     </details>)}
     <button className="button secondary full" onClick={() => patch({ [key]: [...(c[key] || []), { id: uid(),
-      ...(options.person ? { [options.person]: people[0]?.id } : {}), ...options.defaults }] })}><Plus size={16} /> Tambah {title.toLowerCase()}</button>
+      ...(options.person ? { [options.person]: people[0]?.id } : {}), ...options.defaults }] })}><Plus size={16} />{t('Tambah {item}', { item: t(title).toLowerCase() })}</button>
   </Section>;
   const reorder = (key, index, direction) => {
     const items = [...(c[key] || [])], other = index + direction;
@@ -98,10 +109,10 @@ export default function SceneInspector({ controls, image, advanced }) {
     [items[index], items[other]] = [items[other], items[index]];
     patch({ [key]: items });
   };
-  const photos = (value, apply) => <div className="field" data-field-key="scene-images"><span>Foto / album · {value?.length || 0}</span>
+  const photos = (value, apply) => <div className="field" data-field-key="scene-images"><span>{t('Foto / album')} · {value?.length || 0}</span>
     {(value || []).map((item, index) => <div className="edit-card" key={item.id || index}>
       {image(`Foto ${index + 1}`, item.src || item.url || item, src => apply(value.map((entry, i) => i === index ? { id: item.id || uid(), src } : entry)))}
-      <button className="text-button" onClick={() => apply(value.filter((_, i) => i !== index))}>Hapus foto {index + 1}</button>
+      <button className="text-button" onClick={() => apply(value.filter((_, i) => i !== index))}>{t('Hapus foto {n}', { n: index + 1 })}</button>
     </div>)}
     {image('Tambah foto', '', src => { if (src) apply([...(value || []), { id: uid(), src }]); })}
   </div>;
@@ -135,8 +146,8 @@ export default function SceneInspector({ controls, image, advanced }) {
       {kind === 'poll' && <>{(item.options || []).map((option, index) => <div className="edit-card" key={index}>
         {[['text', 'Pilihan', 'text'], ['votes', 'Suara', 'text'], ['percent', 'Persen', 'number']].map(([key, label, type]) => <Field key={key} label={label} type={type} value={option[key]}
           onChange={value => apply({ options: item.options.map((row, i) => i === index ? { ...row, [key]: value } : row) })} />)}
-        <button className="text-button" onClick={() => apply({ options: item.options.filter((_, i) => i !== index) })}>Hapus pilihan</button>
-      </div>)}<button className="button secondary" onClick={() => apply({ options: [...(item.options || []), { text: 'Pilihan baru', votes: '0', percent: 0 }] })}>Tambah pilihan</button>
+        <button className="text-button" onClick={() => apply({ options: item.options.filter((_, i) => i !== index) })}>{t('Hapus pilihan')}</button>
+      </div>)}<button className="button secondary" onClick={() => apply({ options: [...(item.options || []), { text: 'Pilihan baru', votes: '0', percent: 0 }] })}>{t('Tambah pilihan')}</button>
         <Field label="Jumlah suara" value={item.totalVotes} onChange={totalVotes => apply({ totalVotes })} /></>}
     </>;
   };
@@ -174,30 +185,30 @@ export default function SceneInspector({ controls, image, advanced }) {
         <Field label="Lebar (px)" type="number" min={100} max={4096} value={composition.width} onChange={width => set({ width: finite(width, 900, 100, 4096) })} />
         <Field label="Tinggi (px)" type="number" min={100} max={4096} value={composition.height} onChange={height => set({ height: finite(height, 1200, 100, 4096) })} /></div>
         <Field label="Warna latar" type="color" value={composition.background} onChange={background => set({ background })} />
-        <Choice label="Ambil salinan adegan" value={sourceId || sources[0]?.id} options={sources.map(item => [item.id, `${item.order}. ${item.title}`])} onChange={setSourceId} />
-        <button className="button secondary full" onClick={add} disabled={!sources.length}><Plus size={16} /> Tambah ke kolase</button>
-        <p className="field-hint">Setiap bagian menyimpan salinan layar. Mengedit slide sumber tidak mengubah kolase.</p>
+        <Choice label="Ambil salinan adegan" value={sourceId || sources[0]?.id} translateOptions={false} options={sources.map(item => [item.id, `${item.order}. ${item.title}`])} onChange={setSourceId} />
+        <button className="button secondary full" onClick={add} disabled={!sources.length}><Plus size={16} />{t('Tambah ke kolase')}</button>
+        <p className="field-hint">{t('Setiap bagian menyimpan salinan layar. Mengedit slide sumber tidak mengubah kolase.')}</p>
         <Toggle label="Sengaja potong bagian di luar kanvas" checked={composition.intentional} onChange={intentional => set({ intentional })} />
-        {items.some(item => item.x < 0 || item.y < 0 || item.x + item.width > composition.width || item.y + item.height > composition.height) && <p className="inline-error" role="status">Ada bagian di luar kanvas. Geser, kecilkan, atau tandai pemotongan yang disengaja.</p>}
+        {items.some(item => item.x < 0 || item.y < 0 || item.x + item.width > composition.width || item.y + item.height > composition.height) && <p className="inline-error" role="status">{t('Ada bagian di luar kanvas. Geser, kecilkan, atau tandai pemotongan yang disengaja.')}</p>}
         <Field label="Jarak susunan otomatis (px)" type="number" min={0} max={300} value={composition.gap ?? 16} onChange={gap => set({ gap })} />
-        <div className="field-row"><button className="button secondary" onClick={() => layout('vertical')} disabled={!items.length}>Susun ke bawah</button><button className="button secondary" onClick={() => layout('horizontal')} disabled={!items.length}>Susun ke samping</button></div>
+        <div className="field-row"><button className="button secondary" onClick={() => layout('vertical')} disabled={!items.length}>{t('Susun ke bawah')}</button><button className="button secondary" onClick={() => layout('horizontal')} disabled={!items.length}>{t('Susun ke samping')}</button></div>
       </Section>
       {items.map((item, index) => {
         const size = deviceMetrics(item.snapshot.slide, item.snapshot.globalSettings);
         const crop = cropRectangle(item.crop, size.width, size.height);
-        return <Section key={item.id} title={`Bagian ${index + 1} · ${item.snapshot.slide.title}`} target={`part:${item.id}`}>
-          <div className="edit-card-heading"><span>Lapisan {index + 1}</span><div>{[-1, 1].map(direction => <button key={direction} aria-label={direction < 0 ? 'Ke belakang' : 'Ke depan'}
+        return <Section key={item.id} title={`${t('Bagian {n}', { n: index + 1 })} · ${item.snapshot.slide.title}`} target={`part:${item.id}`}>
+          <div className="edit-card-heading"><span>{t('Lapisan {n}', { n: index + 1 })}</span><div>{[-1, 1].map(direction => <button key={direction} aria-label={t(direction < 0 ? 'Ke belakang' : 'Ke depan')}
             disabled={index + direction < 0 || index + direction >= items.length} onClick={() => { const next = [...items]; [next[index], next[index + direction]] = [next[index + direction], next[index]]; set({ items: next }); }}>{direction < 0 ? <ArrowDown size={15} /> : <ArrowUp size={15} />}</button>)}
-            <button aria-label="Hapus bagian" onClick={() => set({ items: items.filter(value => value.id !== item.id) })}><Trash2 size={15} /></button></div></div>
+            <button aria-label={t('Hapus bagian')} onClick={() => set({ items: items.filter(value => value.id !== item.id) })}><Trash2 size={15} /></button></div></div>
           <Choice label="Bingkai" value={item.surface || 'screen'} options={[[ 'screen', 'Layar saja' ], [ 'phone', 'HP dengan bingkai' ]]} onChange={surface => itemChange(item.id, { surface })} />
           {[['x', 'Kiri'], ['y', 'Atas'], ['width', 'Lebar'], ['height', 'Tinggi']].map(([key, label]) => <Field key={key} label={`${label} (px kanvas)`} type="number" value={Math.round(item[key])}
             onChange={value => itemChange(item.id, { [key]: finite(value, 0, key === 'width' || key === 'height' ? 1 : -4096, 4096) })} />)}
           <Choice label="Crop bagian" value="" options={[[ '', 'Pilih potongan' ], [ 'full', 'Layar penuh' ], [ 'top', 'Setengah atas' ], [ 'bottom', 'Setengah bawah' ], [ 'keyboard', 'Fokus keyboard' ]]}
             onChange={name => { if (name) { const next = cropPreset(name, size.width, size.height, item.snapshot.slide.content.keyboardHeight || size.width * .79); itemChange(item.id, { crop: next, height: item.width * next.height / next.width }); } }} />
-          {advanced && Object.keys(crop).map(key => <Field key={key} label={`Crop ${key} (px layar)`} type="number" value={crop[key]}
+          {advanced && [['x', 'Potongan kiri'], ['y', 'Potongan atas'], ['width', 'Lebar potongan'], ['height', 'Tinggi potongan']].map(([key, label]) => <Field key={key} label={`${label} (px layar)`} type="number" value={crop[key]}
             onChange={value => itemChange(item.id, { crop: cropRectangle({ ...crop, [key]: value }, size.width, size.height) })} />)}
           <button className="text-button" onClick={() => { const dims = item.surface === 'phone' ? { width: crop.width + 2 * size.inset, height: crop.height + 2 * size.inset } : crop;
-            itemChange(item.id, { height: item.width * dims.height / dims.width }); }}>Pulihkan proporsi layar</button>
+            itemChange(item.id, { height: item.width * dims.height / dims.width }); }}>{t('Pulihkan proporsi layar')}</button>
         </Section>;
       })}
     </>;
@@ -213,13 +224,13 @@ export default function SceneInspector({ controls, image, advanced }) {
       }} />
       <Choice label="Layar yang ditampilkan" value={screen} options={SCENE_APPS.find(item => item.id === app).screens.map(key => [key, SCREEN_LABELS[key]])}
         onChange={screen => { changeState({ screen, overlay: null, history: [] }); updateSlideMeta(slide.id, { viewport: { ...slide.viewport, scroll: 0 } }); }} />
-      <Choice label="Bahasa layar HP" value={slide.customSettings?.locale || 'id'} options={[[ 'id', 'Indonesia' ], [ 'en', 'English' ]]} onChange={value => setting('locale', value)} />
-      <Choice label="Tema layar" value={slide.customSettings?.theme || project.globalSettings.theme} options={[[ 'light', 'Terang' ], [ 'dark', 'Gelap' ]]} onChange={value => setting('theme', value)} />
       <PersonChoice label={chat ? 'Lawan bicara' : 'Tokoh / akun utama'} value={c.targetCharacterId || c.authorId} characters={people} self
         onChange={value => { patch({ targetCharacterId: value, authorId: value }); changeState({ personId: null }); }} />
       {['group', 'group_feed', 'channel'].includes(screen) && <><Field label="Nama grup / kanal" value={c.groupTitle} onChange={groupTitle => patch({ groupTitle })} />
         {image('Foto grup', c.groupAvatar, groupAvatar => patch({ groupAvatar }))}<Field label="Anggota / deskripsi grup" value={c.membersText} onChange={membersText => patch({ membersText })} /></>}
     </Section>
+    <Section title="Tampilan adegan"><Choice label="Bahasa layar HP" value={slide.customSettings?.locale || 'id'} options={[[ 'id', 'Indonesia' ], [ 'en', 'English' ]]} onChange={value => setting('locale', value)} />
+      <Choice label="Tema layar" value={slide.customSettings?.theme || project.globalSettings.theme} options={[[ 'light', 'Terang' ], [ 'dark', 'Gelap' ]]} onChange={value => setting('theme', value)} /></Section>
     {chat && <>
       <Section title="Header percakapan" target="chat-header"><Field label="Nama di layar (opsional)" value={c.contactName} onChange={contactName => patch({ contactName })} />
         {image('Avatar khusus slide', c.contactAvatar, contactAvatar => patch({ contactAvatar }), 'avatar')}
@@ -280,7 +291,7 @@ export default function SceneInspector({ controls, image, advanced }) {
         {image('Sampul lagu', c.musicSticker?.albumArt, albumArt => nested('musicSticker', { albumArt }))}</>}
       <Toggle label="Stiker pertanyaan" checked={c.questionSticker?.enabled} onChange={enabled => nested('questionSticker', { enabled })} />
       {c.questionSticker?.enabled && <><Field label="Pertanyaan" value={c.questionSticker.prompt} onChange={prompt => nested('questionSticker', { prompt })} /><Field label="Jawaban / placeholder" value={c.questionSticker.answer} onChange={answer => nested('questionSticker', { answer })} /></>}
-      {state.media && <button className="button secondary" onClick={() => changeState({ media: null })}>Pakai media utama slide</button>}
+      {state.media && <button className="button secondary" onClick={() => changeState({ media: null })}>{t('Pakai media utama slide')}</button>}
     </Section>}
     {media && collection('storyStickers', 'Stiker / teks story', [['text', 'Teks'], ['x', 'Kiri (%)', 'number'], ['y', 'Atas (%)', 'number'], ['width', 'Lebar (px)', 'number'], ['rotation', 'Rotasi', 'number'], ['color', 'Warna teks', 'color'], ['background', 'Warna blok', 'color']], { media: true, defaults: { kind: 'text', x: 10, y: 30, width: 120, color: '#ffffff', background: '#000000' } })}
     {screen === 'call' && <Section title="Keadaan panggilan" target="call-status">
@@ -300,8 +311,8 @@ export default function SceneInspector({ controls, image, advanced }) {
     {app === 'notes' && <><Section title="Catatan" target="note"><Field label="Judul" value={c.title} onChange={title => patch({ title })} /><Field label="Isi catatan" value={c.text} multiline onChange={text => patch({ text })} />
       <Field label="Tanggal / waktu" value={c.timestamp} onChange={timestamp => patch({ timestamp })} /><Toggle label="Isi tebal" checked={c.noteBold} onChange={noteBold => patch({ noteBold })} />{photos(c.images, images => patch({ images }))}</Section>
       {collection('notes', 'Catatan', [['title', 'Judul'], ['text', 'Isi'], ['time', 'Waktu']])}
-      <Section title="Daftar centang">{(c.checklist || []).map(item => <div className="edit-card" key={item.id}><Field label="Isi" value={item.text} onChange={text => changeItem('checklist', item.id, { text })} /><Toggle label="Selesai" checked={item.checked} onChange={checked => changeItem('checklist', item.id, { checked })} /><button className="text-button" onClick={() => patch({ checklist: c.checklist.filter(value => value.id !== item.id) })}>Hapus</button></div>)}
-        <button className="button secondary" onClick={() => patch({ checklist: [...(c.checklist || []), { id: uid(), text: '', checked: false }] })}>Tambah centang</button></Section>
+      <Section title="Daftar centang">{(c.checklist || []).map(item => <div className="edit-card" key={item.id}><Field label="Isi" value={item.text} onChange={text => changeItem('checklist', item.id, { text })} /><Toggle label="Selesai" checked={item.checked} onChange={checked => changeItem('checklist', item.id, { checked })} /><button className="text-button" onClick={() => patch({ checklist: c.checklist.filter(value => value.id !== item.id) })}>{t('Hapus')}</button></div>)}
+        <button className="button secondary" onClick={() => patch({ checklist: [...(c.checklist || []), { id: uid(), text: '', checked: false }] })}>{t('Tambah centang')}</button></Section>
     </>}
     {screen === 'notes' && <Section title="Notes" target="notes"><Field label="Teks Notes" value={c.noteText || c.text} multiline onChange={noteText => patch({ noteText })} /></Section>}
     {(chat || ['comments', 'story', 'status', 'instant'].includes(screen)) && <Section title="Kolom ketik dan keyboard" target="composer">
@@ -322,14 +333,14 @@ export default function SceneInspector({ controls, image, advanced }) {
       {app === 'whatsapp' && <Choice label="Warna awal WhatsApp" value={c.chatPalette || 'classic'} options={WHATSAPP_THEMES} onChange={chatPalette => patch({ chatPalette, ...Object.fromEntries(PALETTE.map(([key]) => [key, ''])) })} />}
       {image('Wallpaper sendiri', c.customWallpaper, customWallpaper => patch({ customWallpaper }))}
       {advanced && PALETTE.map(([key, label], index) => <Field key={key} label={label} type="color" value={c[key] || visibleColors[key] || DEFAULT_COLORS[index]} onChange={value => patch({ [key]: value })} />)}
-      {!advanced && <p className="field-hint">Buka Mode lanjut untuk mengganti setiap warna.</p>}
-      <button className="button secondary full" onClick={() => patch({ chatPalette: 'classic', customWallpaper: '', ...Object.fromEntries(PALETTE.map(([key]) => [key, ''])) })}>Reset warna standar aplikasi</button>
+      {!advanced && <p className="field-hint">{t('Buka Mode lanjut untuk mengganti setiap warna.')}</p>}
+      <button className="button secondary full" onClick={() => patch({ chatPalette: 'classic', customWallpaper: '', ...Object.fromEntries(PALETTE.map(([key]) => [key, ''])) })}>{t('Reset warna standar aplikasi')}</button>
     </Section>
     {advanced && <>
       <Section title="Menu dan lapisan layar" target="overlay">
         <Choice label="Lapisan aktif" value={state.overlay || ''} options={[[ '', 'Tidak ada' ], [ 'message-menu', 'Menu pesan' ], [ 'facebook-reactions', 'Pemilih reaksi' ], [ 'attachments', 'Lampiran' ], [ 'stickers', 'Tray stiker / emoji' ], [ 'share', 'Bagikan' ], [ 'screen-menu', 'Menu layar' ], [ 'dialpad', 'Keypad panggilan' ]]}
           onChange={overlay => changeState({ overlay: overlay || null })} />
-        <Choice label="Pesan untuk menu" value={state.messageId || c.messages?.[0]?.id || ''} options={[[ '', 'Pilih pesan' ], ...(c.messages || []).map((item, i) => [item.id, `${i + 1}. ${item.text || MESSAGE_LABELS[item.kind]}`])]}
+        <Choice label="Pesan untuk menu" value={state.messageId || c.messages?.[0]?.id || ''} translateOptions={false} options={[[ '', t('Pilih pesan') ], ...(c.messages || []).map((item, i) => [item.id, `${i + 1}. ${item.text || t(MESSAGE_LABELS[item.kind])}`])]}
           onChange={messageId => changeState({ messageId })} />
         <Field label="Judul menu khusus" value={c.overlayTitle} onChange={overlayTitle => patch({ overlayTitle })} />
       </Section>
@@ -339,9 +350,9 @@ export default function SceneInspector({ controls, image, advanced }) {
         {[['screenWidth', 'Lebar layar', 240, 1200], ['screenHeight', 'Tinggi layar', 400, 2400]].map(([key, label, min, max]) => <Field key={key} label={`${label} (px logis)`} type="number" min={min} max={max}
           value={slide.customSettings?.[key] || deviceMetrics(slide, project.globalSettings)[key === 'screenWidth' ? 'width' : 'height']} onChange={value => setting(key, finite(value, min, min, max))} />)}
       </Section>
-      {editTarget && <Section title={`Elemen terpilih · ${editTarget}`} target={editTarget}>
-        <p className="field-hint">Ketuk elemen pada mode Edit elemen. Perubahan hanya berlaku di adegan ini.</p>
-        {editTarget.startsWith('control:') && <Choice label="Ganti ikon" value={c.iconOverrides?.[editTarget.slice(8)] || ''} options={[[ '', 'Ikon standar' ], ...NATIVE_ICONS.map(name => [name, name])]}
+      {editTarget && <Section title="Pengaturan elemen" target="element-style">
+        <p className="field-hint">{t('Pilih Ubah isi lalu ketuk elemen. Perubahan hanya berlaku di adegan ini.')}</p>
+        {editTarget.startsWith('control:') && <Choice label="Ganti ikon" value={c.iconOverrides?.[editTarget.slice(8)] || ''} options={[[ '', 'Ikon standar' ], ...NATIVE_ICONS.map(name => [name, ICON_LABELS[name]])]}
           onChange={value => patch({ iconOverrides: { ...c.iconOverrides, [editTarget.slice(8)]: value } })} />}
         {[['fontSize', 'Ukuran huruf', 'number'], ['weight', 'Ketebalan (100–900)', 'number'], ['x', 'Geser horizontal (px)', 'number'], ['y', 'Geser vertikal (px)', 'number'],
           ['width', 'Lebar (px)', 'number'], ['height', 'Tinggi (px)', 'number'], ['iconSize', 'Ukuran ikon (px)', 'number'], ['radius', 'Radius (px)', 'number'], ['rotation', 'Rotasi', 'number'], ['color', 'Warna teks', 'color'], ['background', 'Warna latar', 'color']].map(([key, label, type]) => <Field key={key} label={label} type={type}
@@ -349,10 +360,10 @@ export default function SceneInspector({ controls, image, advanced }) {
               [editTarget]: { ...slide.customSettings?.elementStyles?.[editTarget], [key]: value } })} />)}
         <Toggle label="Sembunyikan elemen" checked={slide.customSettings?.elementStyles?.[editTarget]?.hidden} onChange={hidden => setting('elementStyles', { ...slide.customSettings?.elementStyles,
           [editTarget]: { ...slide.customSettings?.elementStyles?.[editTarget], hidden } })} />
-        <button className="text-button" onClick={() => { const values = { ...slide.customSettings?.elementStyles }; delete values[editTarget]; setting('elementStyles', values); }}>Reset elemen ini</button>
+        <button className="text-button" onClick={() => { const values = { ...slide.customSettings?.elementStyles }; delete values[editTarget]; setting('elementStyles', values); }}>{t('Reset elemen ini')}</button>
       </Section>}
-      <Section title="Label layar khusus"><p className="field-hint">Isi hanya label yang ingin diganti. Kosongkan untuk bahasa standar.</p>
-        {['today', 'typing', 'message', 'read', 'edited', 'forwarded', 'unread', 'reply', 'likes', 'posts', 'followers', 'following', 'replyTo', 'answer', 'menu', 'stickers'].map(key => <Field key={key} label={key}
+      <Section title="Label layar khusus"><p className="field-hint">{t('Isi hanya label yang ingin diganti. Kosongkan untuk bahasa standar.')}</p>
+        {Object.entries({ today: 'Pemisah hari', typing: 'Indikator mengetik', message: 'Placeholder pesan', read: 'Label dilihat', edited: 'Diedit', forwarded: 'Diteruskan', unread: 'Belum dibaca', reply: 'Balasan', likes: 'Suka', posts: 'Postingan', followers: 'Pengikut', following: 'Mengikuti', replyTo: 'Membalas kepada', answer: 'Jawaban', menu: 'Menu', stickers: 'Stiker' }).map(([key, label]) => <Field key={key} label={label}
           value={c.labels?.[key]} onChange={value => nested('labels', { [key]: value || undefined })} />)}
       </Section>
     </>}

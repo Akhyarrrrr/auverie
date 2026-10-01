@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useUI } from '../../context/UIContext';
 import { ArrowDown, ArrowUp, Copy, ImagePlus, Plus, Trash2 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { PHONE_MODELS } from '../../data/samplePresets';
@@ -15,45 +16,64 @@ const BLOCK_TYPES = [
 ];
 
 function Field({ label, value, onChange, placeholder = '', multiline = false, type = 'text', min, max }) {
-  return <label className="field"><span>{label}</span>{multiline
-    ? <textarea aria-label={label} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} />
-    : <input aria-label={label} type={type} min={min} max={max} value={value ?? ''} onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)} placeholder={placeholder} />}</label>;
+  const { t } = useUI();
+  return <label className="field"><span>{t(label)}</span>{multiline
+    ? <textarea aria-label={t(label)} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={t(placeholder)} rows={3} />
+    : <input aria-label={t(label)} type={type} min={min} max={max} value={value ?? ''} onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)} placeholder={t(placeholder)} />}</label>;
 }
 
 function Toggle({ label, checked, onChange }) {
-  return <label className="toggle-field"><span>{label}</span><input type="checkbox" checked={!!checked} onChange={e => onChange(e.target.checked)} /></label>;
+  const { t } = useUI();
+  return <label className="toggle-field"><span>{t(label)}</span><input type="checkbox" checked={!!checked} onChange={e => onChange(e.target.checked)} /></label>;
 }
 
-function Choice({ label, value, onChange, options }) {
-  return <label className="field"><span>{label}</span><select aria-label={label} value={value ?? ''} onChange={e => onChange(e.target.value)}>
-    {options.map(([key, text]) => <option key={key} value={key}>{text}</option>)}
+function Choice({ label, value, onChange, options, translateOptions = true }) {
+  const { t } = useUI();
+  return <label className="field"><span>{t(label)}</span><select aria-label={t(label)} value={value ?? ''} onChange={e => onChange(e.target.value)}>
+    {options.map(([key, text]) => <option key={key} value={key}>{translateOptions ? t(text) : text}</option>)}
   </select></label>;
 }
 
 function PersonChoice({ label, value, onChange, characters, self = false }) {
-  return <Choice label={label} value={value || (self ? 'me' : characters[0]?.id || '')} onChange={onChange}
-    options={[...(self ? [['me', 'Saya']] : []), ...characters.map(c => [c.id, c.name])]} />;
+  const { t } = useUI();
+  return <Choice label={label} value={value || (self ? 'me' : characters[0]?.id || '')} onChange={onChange} translateOptions={false}
+    options={[...(self ? [['me', t('Saya')]] : []), ...characters.map(c => [c.id, c.name])]} />;
 }
 
 function ImageField({ label, value, onPick, onClear }) {
-  return <div className="field"><span>{label}</span><div className="asset-control">
+  const { t } = useUI();
+  return <div className="field"><span>{t(label)}</span><div className="asset-control">
     {value && <img src={value} alt="" />}
-    <button className="button secondary" onClick={onPick} type="button"><ImagePlus size={16} /> {value ? 'Ganti gambar' : 'Pilih atau unggah'}</button>
-    {value && <button className="text-button" onClick={onClear} type="button">Hapus</button>}
+    <button className="button secondary" onClick={onPick} type="button"><ImagePlus size={16} /> {t(value ? 'Ganti gambar' : 'Pilih atau unggah')}</button>
+    {value && <button className="text-button" onClick={onClear} type="button">{t('Hapus')}</button>}
   </div></div>;
 }
 
+const InspectorGroup = createContext('content');
+const screenSections = ['Tampilan perangkat', 'Tampilan WhatsApp', 'Warna dan wallpaper', 'Ukuran dan font layar', 'Tampilan adegan'];
 function Section({ title, children, target }) {
-  return <section className="inspector-section" data-field-key={target}><h3>{title}</h3>{children}</section>;
+  const { t } = useUI(), group = useContext(InspectorGroup);
+  const sectionGroup = target === 'viewport' || title === 'Kanvas kolase' || target?.startsWith('part:') ? 'output'
+    : screenSections.includes(title) || target === 'element-style' ? 'screen' : 'content';
+  if (sectionGroup !== group) return null;
+  return <section className="inspector-section" data-field-key={target}><h3>{t(title)}</h3>{children}</section>;
 }
 
 export default function SlideInspector() {
+  const { t } = useUI();
   const { project, activeSlide, updateSlideContent, updateSlideMeta, duplicateSlide, deleteSlide,
     editTarget, setEditTarget } = useProject();
   const [advanced, setAdvanced] = useState(false);
   const [picker, setPicker] = useState(null);
   const [notice, setNotice] = useState('');
+  const [group, setGroup] = useState('content');
+  useEffect(() => { setGroup(activeSlide?.type === 'composition' ? 'output' : 'content'); }, [activeSlide?.id]);
 
+  useEffect(() => {
+    if (!editTarget) return;
+    setGroup(editTarget === 'viewport' || editTarget.startsWith('part:') ? 'output'
+      : ['palette', 'element-style'].includes(editTarget) || editTarget.startsWith('control:') ? 'screen' : 'content');
+  }, [editTarget]);
   useEffect(() => {
     if (!editTarget) return;
     if (editTarget === 'story-stickers' || editTarget === 'lock-music' || editTarget === 'replies'
@@ -63,9 +83,9 @@ export default function SlideInspector() {
     const target = [...document.querySelectorAll('[data-field-key]')]
       .find(node => node.dataset.fieldKey === editTarget);
     target?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [editTarget, activeSlide?.id, activeSlide?.type, advanced]);
+  }, [editTarget, activeSlide?.id, activeSlide?.type, advanced, group]);
 
-  if (!activeSlide) return <aside className="inspector-panel"><p>Pilih slide untuk mulai mengedit.</p></aside>;
+  if (!activeSlide) return <aside className="inspector-panel"><p>{t('Pilih slide untuk mulai mengedit.')}</p></aside>;
   const slide = activeSlide;
   const c = slide.content || {};
   const patch = changes => updateSlideContent(slide.id, changes);
@@ -119,21 +139,26 @@ export default function SlideInspector() {
 
   return <aside className="inspector-panel">
     <div className="inspector-header">
-      <div><h2>Edit slide {slide.order}</h2><span>Perubahan langsung terlihat di pratinjau</span></div>
+      <div><h2>{t('Edit slide {n}', { n: slide.order })}</h2><span>{t('Perubahan langsung terlihat di pratinjau')}</span></div>
       <div className="inspector-actions">
-        <button className="icon-button" title="Duplikasi slide" aria-label="Duplikasi slide" onClick={() => duplicateSlide(slide.id)}><Copy size={16} /></button>
-        <button className="icon-button danger" title="Hapus slide" aria-label="Hapus slide" onClick={() => {
+        <button className="icon-button" title={t('Duplikasi slide')} aria-label={t('Duplikasi slide')} onClick={() => duplicateSlide(slide.id)}><Copy size={16} /></button>
+        <button className="icon-button danger" title={t('Hapus slide')} aria-label={t('Hapus slide')} onClick={() => {
           if (!deleteSlide(slide.id)) setNotice('Cerita harus memiliki setidaknya satu slide.');
         }}><Trash2 size={16} /></button>
       </div>
     </div>
     <div className="inspector-content">
-      {notice && <p className="inline-notice" role="status">{notice}</p>}
-      <div className="mode-switch" role="group" aria-label="Mode pengaturan">
-        <button className={!advanced ? 'active' : ''} onClick={() => setAdvanced(false)}>Mudah</button>
-        <button className={advanced ? 'active' : ''} onClick={() => setAdvanced(true)}>Lanjut</button>
+      {notice && <p className="inline-notice" role="status">{t(notice)}</p>}
+      <div className="inspector-groups" role="group" aria-label={t('Mode pengaturan')}>
+        {[[ 'content', 'Isi cerita' ], [ 'screen', 'Tampilan layar' ], [ 'output', 'Hasil gambar' ]].map(([key, label]) => <button key={key} aria-pressed={group === key} className={group === key ? 'active' : ''} onClick={() => setGroup(key)}>{t(label)}</button>)}
       </div>
-      <Field label="Nama slide" value={slide.title} onChange={title => updateSlideMeta(slide.id, { title })} />
+      <div className="mode-switch" role="group" aria-label={t('Mode pengaturan')}>
+        <button className={!advanced ? 'active' : ''} onClick={() => setAdvanced(false)}>{t('Mudah')}</button>
+        <button className={advanced ? 'active' : ''} onClick={() => setAdvanced(true)}>{t('Lanjut')}</button>
+      </div>
+      <p className="field-hint">{t(advanced ? 'Semua detail tampilan dapat diatur di mode ini.' : 'Mulai dari isi utama. Buka Lanjut untuk detail tambahan.')}</p>
+      {group === 'content' && <Field label="Nama slide" value={slide.title} onChange={title => updateSlideMeta(slide.id, { title })} />}
+      <InspectorGroup.Provider value={group}>
 
       {modern && <SceneInspector controls={controls} image={image} advanced={advanced} />}
       {!modern && CHAT_TYPES.includes(slide.type) && <>
@@ -199,10 +224,10 @@ export default function SlideInspector() {
           {(c.messages || []).map((message, index) => <div key={message.id}
             className={selectedClass('message:' + message.id)} data-field-key={'message:' + message.id}
             onClick={() => selectCard('message:' + message.id)}>
-            <div className="edit-card-heading"><strong>Pesan {index + 1}</strong><div>
-              <button onClick={() => moveItem('messages', index, -1)} disabled={index === 0} aria-label="Geser pesan ke atas"><ArrowUp size={15} /></button>
-              <button onClick={() => moveItem('messages', index, 1)} disabled={index === c.messages.length - 1} aria-label="Geser pesan ke bawah"><ArrowDown size={15} /></button>
-              <button onClick={() => removeItem('messages', message.id)} aria-label="Hapus pesan"><Trash2 size={15} /></button>
+            <div className="edit-card-heading"><strong>{t('Pesan')} {index + 1}</strong><div>
+              <button onClick={() => moveItem('messages', index, -1)} disabled={index === 0} aria-label={t('Geser pesan ke atas')}><ArrowUp size={15} /></button>
+              <button onClick={() => moveItem('messages', index, 1)} disabled={index === c.messages.length - 1} aria-label={t('Geser pesan ke bawah')}><ArrowDown size={15} /></button>
+              <button onClick={() => removeItem('messages', message.id)} aria-label={t('Hapus pesan')}><Trash2 size={15} /></button>
             </div></div>
             <PersonChoice label="Pengirim" value={message.senderId} characters={project.characters} self
               onChange={senderId => changeItem('messages', message.id, { senderId })} />
@@ -241,7 +266,7 @@ export default function SlideInspector() {
           </div>)}
           <button className="button secondary full" onClick={() => addItem('messages', {
             senderId: 'me', text: '', time: project.globalSettings.time || '23:45', status: 'read'
-          })}><Plus size={17} /> Tambah pesan</button>
+          })}><Plus size={17} />{t('Tambah pesan')}</button>
         </Section>
       </>}
 
@@ -286,7 +311,7 @@ export default function SlideInspector() {
           </Section>
           <Section title={'Balasan · ' + (c.replies?.length || 0)} target="replies">
             {(c.replies || []).map((reply, index) => <div className="edit-card" key={reply.id}>
-              <div className="edit-card-heading"><strong>Balasan {index + 1}</strong><button onClick={() => removeItem('replies', reply.id)} aria-label="Hapus balasan"><Trash2 size={15} /></button></div>
+              <div className="edit-card-heading"><strong>{t('Balasan')} {index + 1}</strong><button onClick={() => removeItem('replies', reply.id)} aria-label={t('Hapus balasan')}><Trash2 size={15} /></button></div>
               <PersonChoice label="Penulis" value={reply.authorId} characters={project.characters}
                 onChange={authorId => changeItem('replies', reply.id, { authorId })} />
               <Field label="Isi balasan" value={reply.text} multiline onChange={text => changeItem('replies', reply.id, { text })} />
@@ -300,7 +325,7 @@ export default function SlideInspector() {
             </div>)}
             <button className="button secondary full" onClick={() => addItem('replies', {
               authorId: project.characters[0]?.id, text: '', timestamp: '1m', likesCount: '0', repliesCount: '0', retweetsCount: '0'
-            })}><Plus size={17} /> Tambah balasan</button>
+            })}><Plus size={17} />{t('Tambah balasan')}</button>
           </Section>
         </>}
       </>}
@@ -314,12 +339,12 @@ export default function SlideInspector() {
         </Section>
         {advanced && <Section title={'Komentar · ' + (c.comments?.length || 0)} target="comments">
           {(c.comments || []).map(comment => <div key={comment.id} className="edit-card" data-field-key={'comment:' + comment.id}>
-            <div className="edit-card-heading"><strong>Komentar</strong><button onClick={() => removeItem('comments', comment.id)} aria-label="Hapus komentar"><Trash2 size={15} /></button></div>
+            <div className="edit-card-heading"><strong>{t('Komentar')}</strong><button onClick={() => removeItem('comments', comment.id)} aria-label={t('Hapus komentar')}><Trash2 size={15} /></button></div>
             <PersonChoice label="Akun" value={comment.authorId} characters={project.characters}
               onChange={authorId => changeItem('comments', comment.id, { authorId })} />
             <Field label="Isi komentar" value={comment.text} onChange={text => changeItem('comments', comment.id, { text })} />
           </div>)}
-          <button className="button secondary full" onClick={() => addItem('comments', { authorId: project.characters[0]?.id, text: '' })}><Plus size={17} /> Tambah komentar</button>
+          <button className="button secondary full" onClick={() => addItem('comments', { authorId: project.characters[0]?.id, text: '' })}><Plus size={17} />{t('Tambah komentar')}</button>
         </Section>}
       </>}
 
@@ -359,7 +384,7 @@ export default function SlideInspector() {
         <Section title={'Notifikasi · ' + (c.notifications?.length || 0)}>
           {(c.notifications || []).map((notification, index) => <div key={notification.id}
             className={selectedClass('notification:' + notification.id)} data-field-key={'notification:' + notification.id}>
-            <div className="edit-card-heading"><strong>Notifikasi {index + 1}</strong><button onClick={() => removeItem('notifications', notification.id)} aria-label="Hapus notifikasi"><Trash2 size={15} /></button></div>
+            <div className="edit-card-heading"><strong>{t('Notifikasi')} {index + 1}</strong><button onClick={() => removeItem('notifications', notification.id)} aria-label={t('Hapus notifikasi')}><Trash2 size={15} /></button></div>
             <Choice label="Aplikasi" value={notification.app || 'whatsapp'}
               options={[[ 'whatsapp', 'WhatsApp' ], [ 'twitter', 'X' ], [ 'instagram', 'Instagram' ], [ 'messages', 'Pesan' ], [ 'custom', 'Aplikasi lain' ]]}
               onChange={app => changeItem('notifications', notification.id, { app })} />
@@ -371,7 +396,7 @@ export default function SlideInspector() {
           </div>)}
           <button className="button secondary full" onClick={() => addItem('notifications', {
             app: 'whatsapp', title: 'Pesan baru', message: '', time: 'Sekarang'
-          })}><Plus size={17} /> Tambah notifikasi</button>
+          })}><Plus size={17} />{t('Tambah notifikasi')}</button>
         </Section>
         {advanced && <Section title="Widget musik" target="lock-music">
           <Toggle label="Tampilkan musik" checked={c.music?.enabled ?? project.globalSettings.lockscreenMusic?.enabled}
@@ -401,10 +426,10 @@ export default function SlideInspector() {
               height: type === 'image' ? 25 : 8, fontSize: 16, color: '#202727', background: '', align: 'left', radius: 10 }); }} />
           {(c.elements || []).map((element, index) => <div key={element.id} className={selectedClass('element:' + element.id)}
             data-field-key={'element:' + element.id} onClick={() => selectCard('element:' + element.id)}>
-            <div className="edit-card-heading"><strong>{BLOCK_TYPES.find(item => item[0] === element.type)?.[1]} {index + 1}</strong><div>
-              <button onClick={() => moveItem('elements', index, -1)} disabled={index === 0} aria-label="Elemen ke belakang"><ArrowDown size={15} /></button>
-              <button onClick={() => moveItem('elements', index, 1)} disabled={index === c.elements.length - 1} aria-label="Elemen ke depan"><ArrowUp size={15} /></button>
-              <button onClick={() => removeItem('elements', element.id)} aria-label="Hapus elemen"><Trash2 size={15} /></button>
+            <div className="edit-card-heading"><strong>{t(BLOCK_TYPES.find(item => item[0] === element.type)?.[1])} {index + 1}</strong><div>
+              <button onClick={() => moveItem('elements', index, -1)} disabled={index === 0} aria-label={t('Elemen ke belakang')}><ArrowDown size={15} /></button>
+              <button onClick={() => moveItem('elements', index, 1)} disabled={index === c.elements.length - 1} aria-label={t('Elemen ke depan')}><ArrowUp size={15} /></button>
+              <button onClick={() => removeItem('elements', element.id)} aria-label={t('Hapus elemen')}><Trash2 size={15} /></button>
             </div></div>
             {['image', 'media'].includes(element.type)
               ? image('Gambar', element.src, src => changeItem('elements', element.id, { src }))
@@ -443,9 +468,9 @@ export default function SlideInspector() {
         </Section>
       </>}
 
-      <OutputSettings controls={controls} />
-      {advanced && slide.type !== 'composition' && <Section title="Tampilan perangkat">
-        <p className="field-hint">Kosongkan pilihan untuk mengikuti pengaturan proyek.</p>
+      <OutputSettings controls={controls} advanced={advanced} />
+      {slide.type !== 'composition' && <Section title="Tampilan perangkat">
+        <p className="field-hint">{t('Kosongkan pilihan untuk mengikuti pengaturan proyek.')}</p>
         <Choice label="Model HP untuk slide ini" value={slide.customSettings?.phoneModel || ''}
           onChange={value => setOverride('phoneModel', value)}
           options={[[ '', 'Ikuti proyek' ], ...PHONE_MODELS.map(model => [model.id, model.name])]} />
@@ -463,6 +488,7 @@ export default function SlideInspector() {
           onChange={value => setOverride('lockscreenFont', value)}
           options={[[ '', 'Ikuti proyek' ], [ 'bold', 'Tebal' ], [ 'serif', 'Serif' ], [ 'modern', 'Modern' ]]} />}
       </Section>}
+      </InspectorGroup.Provider>
     </div>
     <AssetPickerModal isOpen={!!picker} onClose={() => setPicker(null)} type={picker?.type || 'wallpaper'} currentUrl={picker?.value || ''}
       onSelect={url => { picker?.apply(url); setPicker(null); }} />
