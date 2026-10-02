@@ -45,7 +45,7 @@ export default function App() {
   }, [editor, mobileView]);
   useEffect(() => { if (editTarget && window.matchMedia('(max-width: 960px)').matches) setMobileView('edit'); }, [editTarget]);
 
-  if (!ready) return <main className="loading-screen" role="status"><Brand /><span className="loading-line" /><p>{t('Menyiapkan ruang ceritamu…')}</p></main>;
+  if (!ready) return <main className="loading-screen" role="status" aria-label={t('Memuat aplikasi')}><Brand /><span className="loading-line" /></main>;
   if (loadError) return <main className="loading-screen"><Brand /><p role="alert">{t('Penyimpanan browser tidak dapat dibuka. Coba muat ulang atau gunakan browser biasa.')}</p><button className="button primary" onClick={retryLoad}>{t('Coba lagi')}</button></main>;
   if (route === '#/help' || route === '#/about') return <InfoPage about={route === '#/about'} />;
   if (!editor && ['#/', '#/examples', '#/editor'].includes(route)) return <Home onEnter={first => { setMobileView('preview'); setZoom(1); setOutputPreview(false); if (first && !readPreference('auverie_onboarding_v1', '')) setGuideOpen(true); location.hash = '/editor'; }} />;

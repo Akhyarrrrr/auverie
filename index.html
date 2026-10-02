@@ -2,9 +2,9 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='8' fill='%231c6250'/><text x='10' y='29' font-family='Georgia' font-size='31' fill='white'>a</text><circle cx='31' cy='28' r='2' fill='%23dcebe2'/></svg>" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' rx='9' fill='%231c6250'/><text x='24' y='32' text-anchor='middle' font-family='Georgia' font-weight='bold' font-size='22' fill='white'>AU.</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auverie · Ceritamu, layar demi layar</title>
+    <title>AUverie · Ceritamu, layar demi layar</title>
     <meta name="description" content="Buat cerita AU melalui layar aplikasi, percakapan, postingan, dan kolase. Langsung menulis tanpa akun." />
     <meta name="theme-color" content="#f6f3eb" />
     <link rel="preload" href="/fonts/plusjakartasans-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -14,6 +14,10 @@
       body { margin: 0; }
       .boot-loading { min-height: 100vh; display: grid; place-content: center; gap: 18px; padding: 24px; text-align: center; font-family: system-ui, sans-serif; }
       .boot-loading strong { font: 500 40px Georgia, serif; }
+      .boot-progress { width: 110px; height: 2px; margin: auto; overflow: hidden; background: #b7c7be; }
+      .boot-progress::after { content: ''; display: block; width: 45px; height: 100%; background: #176c59; animation: boot-progress 1s ease-in-out infinite alternate; }
+      @keyframes boot-progress { to { transform: translateX(65px); } }
+      @media (prefers-reduced-motion: reduce) { .boot-progress::after { animation: none; } }
       .boot-loading button { min-height: 44px; padding: 10px 18px; border: 0; border-radius: 7px; background: #176c59; color: white; font: inherit; cursor: pointer; }
     </style>
     <script>
@@ -31,14 +35,16 @@
     </script>
   </head>
   <body>
-    <div id="root"><div id="boot-loading" class="boot-loading" role="status"><strong>auverie.</strong><span id="boot-caption">Menyiapkan ruang ceritamu…</span><button id="boot-retry" hidden onclick="location.reload()">Muat ulang</button></div></div>
-    <noscript>Aktifkan JavaScript untuk membuat dan membuka cerita di Auverie. Enable JavaScript to use Auverie.</noscript>
+    <div id="root"><div id="boot-loading" class="boot-loading" role="status" aria-label="Memuat aplikasi"><strong>AU<em>v</em>erie.</strong><span id="boot-progress" class="boot-progress" aria-hidden="true"></span><span id="boot-caption" hidden></span><button id="boot-retry" hidden onclick="location.reload()">Muat ulang</button></div></div>
+    <noscript>Aktifkan JavaScript untuk membuat dan membuka cerita di AUverie. Enable JavaScript to use AUverie.</noscript>
     <script>
       if (document.documentElement.lang === 'en') {
-        document.getElementById('boot-caption').textContent = 'Preparing your story space…';
+        document.getElementById('boot-loading').setAttribute('aria-label', 'Loading app');
         document.getElementById('boot-retry').textContent = 'Reload';
       }
       function showLoadError() {
+        document.getElementById('boot-caption').hidden = false;
+        document.getElementById('boot-progress').hidden = true;
         document.getElementById('boot-caption').textContent = document.documentElement.lang === 'en' ? 'The app could not load. Reload to try again.' : 'Aplikasi belum bisa dimuat. Muat ulang untuk mencoba lagi.';
         document.getElementById('boot-retry').hidden = false;
         document.getElementById('boot-loading').setAttribute('role', 'alert');

@@ -61,9 +61,8 @@ const categories = [
 
 export function PublicHeader({ onCreate }) {
   const { t } = useUI();
-  return <header className="public-header"><a href="#/" className="brand-link" aria-label="Auverie"><Brand /></a>
-    <nav aria-label={t('Beranda')}><a href="#/examples">{t('Contoh')}</a><a href="#/help">{t('Panduan')}</a></nav>
-    <div className="public-header-actions"><InterfaceControls />{onCreate && <button className="button primary header-create" onClick={onCreate}>{t('Buat cerita')}</button>}</div>
+  return <header className="public-header"><a href="#/" className="brand-link" aria-label="AUverie"><Brand /></a>
+    <div className="public-header-actions"><nav aria-label={t('Panduan')}><a href="#/help">{t('Panduan')}</a></nav><InterfaceControls />{onCreate && <button className="button primary header-create" onClick={onCreate}>{t('Buat cerita')}</button>}</div>
   </header>;
 }
 
@@ -126,7 +125,7 @@ export default function Home({ onEnter }) {
           <label className="field start-more-demos"><span>{t('Lihat aplikasi lainnya')}</span><select aria-label={t('Lihat aplikasi lainnya')} value={demoIndex} onChange={event => setDemoIndex(Number(event.target.value))}>{examples.map((item, index) => <option key={item.label} value={index}>{t(item.label)}</option>)}</select></label>
         </section>
       </section>
-      {busy && <p role="status">{t('Menyiapkan ruang ceritamu…')}</p>}
+      {busy && <div role="status" aria-label={t('Memuat aplikasi')}><span className="loading-line" /></div>}
       {error && <p className="inline-error" role="alert">{errorText(error)}</p>}
       <section className="start-steps" aria-labelledby="steps-title"><div className="section-heading"><span>01 / 03</span><h2 id="steps-title">{t('Dari ide sampai siap dibagikan')}</h2></div>
         <ol>{[['Pilih tampilan', 'Pilih aplikasi dan adegan. Chat, profil, panggilan, atau layar buatanmu sendiri.'],
@@ -150,16 +149,16 @@ export default function Home({ onEnter }) {
 export function InfoPage({ about = false }) {
   const { t } = useUI();
   const items = about ? [
-    ['Auverie', 'Auverie adalah ruang membuat cerita fiksi melalui layar aplikasi. Semua pesan, panggilan, media, dan interaksi disusun sebagai bagian cerita lokal.'],
-    ['Penyimpanan dan privasi', 'Auverie tidak memerlukan akun dan tidak mengirim cerita ke server. Gambar dari tautan luar dimuat dari penyedianya. Unggah berkas agar aset tersimpan bersama file cerita.'],
+    ['AUverie', 'AUverie adalah ruang membuat cerita fiksi melalui layar aplikasi. Semua pesan, panggilan, media, dan interaksi disusun sebagai bagian cerita lokal.'],
+    ['Penyimpanan dan privasi', 'AUverie tidak memerlukan akun dan tidak mengirim cerita ke server. Gambar dari tautan luar dimuat dari penyedianya. Unggah berkas agar aset tersimpan bersama file cerita.'],
     ['Tentang tampilan aplikasi', 'Mockup mengikuti acuan yang diperiksa saat pengembangan. Tampilan aplikasi dapat berbeda menurut versi dan perangkat. Font Apple memakai font sistem saat tersedia; di Windows tampilannya memakai pendekatan Inter. Hasil berupa gambar statis.']
   ] : [
     ['1. Pilih layar', 'Di daftar Slide, pilih Tambah slide lalu tentukan aplikasi dan adegannya. Pengaturan HP mengubah perangkat serta tema layar.'],
     ['2. Isi ceritamu', 'Gunakan Coba layar HP untuk mengetik dan mengirim konten cerita. Pilih Ubah isi lalu ketuk elemen untuk membuka pengaturannya.'],
     ['3. Simpan dan bagikan', 'Lanjutkan ke slide baru membuat salinan adegan. Pilih Unduh gambar untuk PNG atau semua slide dalam ZIP.'],
-    ['Apa bedanya gambar dan file cerita?', 'PNG adalah gambar yang bisa langsung dibagikan. ZIP berisi gambar semua slide. File .aujson menyimpan isi cerita, tokoh, dan pengaturan agar bisa dibuka dan diedit lagi di Auverie.'],
+    ['Apa bedanya gambar dan file cerita?', 'PNG adalah gambar yang bisa langsung dibagikan. ZIP berisi gambar semua slide. File .aujson menyimpan isi cerita, tokoh, dan pengaturan agar bisa dibuka dan diedit lagi di AUverie.'],
     ['Di mana ceritaku disimpan?', 'Perubahan disimpan otomatis di browser dan perangkat ini. File cerita menjadi cadanganmu jika pindah perangkat, menghapus data browser, atau memakai mode privat.'],
-    ['Apa bedanya tema editor dan layar HP?', 'Tombol matahari atau bulan mengubah tampilan Auverie. Untuk tema aplikasi dalam cerita, buka Tampilan layar pada panel Edit. Setiap adegan dapat memiliki tema sendiri.'],
+    ['Apa bedanya tema editor dan layar HP?', 'Tombol matahari atau bulan mengubah tampilan AUverie. Untuk tema aplikasi dalam cerita, buka Tampilan layar pada panel Edit. Setiap adegan dapat memiliki tema sendiri.'],
     ['Apakah bahasa mengubah isi cerita?', 'ID / EN mengubah bahasa tombol dan bantuan. Nama tokoh serta isi cerita tetap seperti yang kamu tulis. Bahasa label aplikasi di mockup dapat diatur lewat Bahasa layar HP.'],
     ['Bagaimana menampilkan keyboard atau stiker?', 'Pada panel Edit, buka Kolom ketik dan keyboard. Aktifkan Keyboard terbuka atau isi Draft belum dikirim. Untuk stiker, pilih jenis konten Stiker lalu unggah gambar atau pilih koleksi.'],
     ['Bagaimana mengambil setengah layar?', 'Buka Hasil gambar lalu pilih Setengah atas, Setengah bawah, atau Fokus keyboard. Lihat hasilnya sebelum mengunduh. Potongan tidak mengubah baris teks.']

@@ -15,7 +15,7 @@ export function UIProvider({ children }) {
   useEffect(() => {
     savePreference('auverie_language', locale);
     document.documentElement.lang = locale;
-    document.title = locale === 'id' ? 'Auverie · Ceritamu, layar demi layar' : 'Auverie · Your story, screen by screen';
+    document.title = locale === 'id' ? 'AUverie · Ceritamu, layar demi layar' : 'AUverie · Your story, screen by screen';
     document.querySelector('meta[name="description"]')?.setAttribute('content', locale === 'id'
       ? 'Buat cerita AU melalui layar aplikasi, percakapan, postingan, dan kolase. Langsung menulis tanpa akun.'
       : 'Create AU stories with app screens, conversations, posts, and collages. Start writing without an account.');

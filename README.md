@@ -1,8 +1,8 @@
-# Auverie
+# AU*v*erie
 
 Ceritamu, layar demi layar. Buat cerita AU melalui percakapan, postingan, notifikasi, panggilan, dan kolase layar HP. Langsung menulis tanpa akun.
 
-## Menggunakan Auverie
+## Menggunakan AU*v*erie
 
 1. Pilih **Buat cerita**, **Coba contoh**, atau **Buka file cerita** di beranda. Demo beranda hanya menampilkan contoh; pergantiannya tidak menyimpan cerita baru.
 2. Tambahkan slide, lalu pilih aplikasi dan adegan. **Coba layar HP** digunakan untuk mengetik, mengirim konten cerita, serta membuka layar dan menu aplikasi.
@@ -72,11 +72,11 @@ Font dan lisensinya berada di `public/fonts/`; asal serta checksum aset font ter
 
 Mockup mengikuti acuan yang diperiksa pada Oktober 2026. Versi aplikasi, emoji, sistem operasi, dan font dapat menghasilkan perbedaan visual. Di Windows, penghalusan tepi huruf pada PNG 1× dapat berbeda dari screenshot browser walau ukuran, baris, dan posisi sama. Pratinjau hasil dan ekspor memakai renderer yang sama. Font dan gambar ditunggu sebelum ekspor, dengan sisi terpanjang maksimal 4096 piksel.
 
-Auverie tidak memerlukan akun atau mengirim cerita ke server. Aset dari URL dimuat dari penyedianya. Nama aplikasi digunakan untuk mengidentifikasi jenis mockup; Auverie tidak berafiliasi dengan pemilik aplikasi tersebut.
+AU*v*erie tidak memerlukan akun atau mengirim cerita ke server. Aset dari URL dimuat dari penyedianya. Nama aplikasi digunakan untuk mengidentifikasi jenis mockup; AU*v*erie tidak berafiliasi dengan pemilik aplikasi tersebut.
 
 ## English
 
-Auverie creates AU stories as phone app scenes. Choose an app and screen, write your story, save the next moment as a new slide, and download full screens, crops, or collages. No account is required.
+AU*v*erie creates AU stories as phone app scenes. Choose an app and screen, write your story, save the next moment as a new slide, and download full screens, crops, or collages. No account is required.
 
 **ID / EN** changes the interface language without translating your story. The editor theme and phone screen theme are separate. **Save a story file** creates an editable `.aujson` backup; **Download images** creates PNG or ZIP files. Stories autosave locally in the current browser and site address. Use a story file to move to another device or domain.
 
