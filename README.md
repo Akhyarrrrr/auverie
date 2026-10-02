@@ -50,7 +50,9 @@ npm run preview
 
 Build ditulis ke `dist/`. `npm run build` menjalankan pemeriksaan kecil untuk terjemahan dan validasi impor, lalu membuat build produksi. `preview` menyediakan hasil build di [localhost:4173](http://localhost:4173).
 
-## Persiapan Vercel
+## Situs online dan Vercel
+
+Aplikasi tersedia di [auverie.vercel.app](https://auverie.vercel.app). Proyek Vercel `auverie` terhubung ke repository GitHub; branch produksi adalah **main**.
 
 Import repository [Akhyarrrrr/auverie](https://github.com/Akhyarrrrr/auverie) dan gunakan branch produksi **main**. Pengaturan sudah berada di `vercel.json`:
 
@@ -61,7 +63,7 @@ Import repository [Akhyarrrrr/auverie](https://github.com/Akhyarrrrr/auverie) da
 | Install command | `npm ci` |
 | Build command | `npm run build` |
 | Output directory | `dist` |
-| Node.js | 22.x |
+| Node.js | 24.x |
 | Environment variables | Tidak diperlukan |
 
 Rewrite SPA disertakan. Navigasi aplikasi memakai hash route, seperti `#/editor` dan `#/help`. Data browser tidak otomatis berpindah ke domain baru; pindahkan melalui **Simpan file cerita** dan **Buka file cerita**.
