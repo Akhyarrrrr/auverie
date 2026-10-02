@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, FileUp, FolderOpen, Plus } from 'lucide-react';
 import { ProjectProvider, useProject } from '../context/ProjectContext';
 import { useUI } from '../context/UIContext';
@@ -7,6 +7,8 @@ import { SCENE_APPS, sceneDefaults } from '../data/sceneCatalog';
 import { deviceMetrics } from '../services/sceneModel';
 import { parseProjectJsonFile } from '../services/storage';
 import PhoneContainer from './phone/PhoneContainer';
+import OutputRenderer from './phone/OutputRenderer';
+import { captureScene, cropPreset, outputDimensions } from '../services/sceneModel';
 import InterfaceControls, { Brand } from './InterfaceControls';
 
 const examples = [
@@ -38,13 +40,23 @@ for (const app of SCENE_APPS.filter(app => !['whatsapp', 'x', 'instagram'].inclu
     } } });
 }
 const demoProject = { ...SAMPLE_PROJECT, slides: examples.map(item => ({ ...item.slide, renderVersion: 3 })) };
+const collageSources = [demoProject.slides[0], demoProject.slides[2]];
+const demoCollage = { id: 'demo-collage', type: 'composition', renderVersion: 3, title: 'Kolase', composition: {
+  width: 900, height: 540, background: '#f2eee5', items: collageSources.map((slide, index) => {
+    const size = deviceMetrics(slide, demoProject.globalSettings);
+    const crop = cropPreset(index ? 'top' : 'bottom', size.width, size.height);
+    return { id: 'part-' + index, snapshot: captureScene(slide, demoProject), crop, surface: 'screen', x: 10 + index * 445, y: 20, width: 435, height: 435 * crop.height / crop.width };
+  })
+} };
+examples.push({ label: 'Kolase', detail: 'Potongan dan kolase', slide: demoCollage });
+demoProject.slides.push(demoCollage);
 const categories = [
   ['Percakapan', 'Pesan, album, stiker, voice note, dan draft yang belum terkirim.', 0],
   ['Postingan dan profil', 'Feed, komentar, story, dan detail akun yang menghidupkan tokohmu.', 2],
   ['Notifikasi dan panggilan', 'Layar kunci atau telepon masuk untuk momen yang menentukan.', 3],
   ['Musik dan narasi', 'Lagu, lirik, dan catatan untuk bagian cerita yang lebih personal.', examples.findIndex(item => item.label === 'Spotify')],
   ['Aplikasi bebas', 'Latar sendiri dengan teks, gambar, dan elemen yang bebas disusun.', 4],
-  ['Potongan dan kolase', 'Pilih bagian layar yang bercerita, lalu susun beberapa adegan.', 0]
+  ['Potongan dan kolase', 'Pilih bagian layar yang bercerita, lalu susun beberapa adegan.', examples.length - 1]
 ];
 
 export function PublicHeader({ onCreate }) {
@@ -66,9 +78,17 @@ export default function Home({ onEnter }) {
   const { recentProjects, project, createProject, startExample, openProject, importProject } = useProject();
   const { t, locale, errorText } = useUI();
   const [error, setError] = useState(''), [busy, setBusy] = useState(false), [demoIndex, setDemoIndex] = useState(0);
+  const [demoRoom, setDemoRoom] = useState(260);
   const fileRef = useRef(null), demoRef = useRef(null);
-  const demo = demoProject.slides[demoIndex], demoSize = deviceMetrics(demo, demoProject.globalSettings);
-  const demoScale = Math.min(515 / demoSize.outerHeight, 260 / demoSize.outerWidth);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setDemoRoom(entry.contentRect.width));
+    if (demoRef.current) observer.observe(demoRef.current);
+    return () => observer.disconnect();
+  }, []);
+  const demo = demoProject.slides[demoIndex], isCollage = demo.type === 'composition';
+  const demoSize = isCollage ? outputDimensions(demo, demoProject.globalSettings) : deviceMetrics(demo, demoProject.globalSettings);
+  const demoWidth = isCollage ? demoSize.width : demoSize.outerWidth, demoHeight = isCollage ? demoSize.height : demoSize.outerHeight;
+  const demoScale = Math.min(515 / demoHeight, Math.min(isCollage ? 400 : 260, demoRoom) / demoWidth);
   const run = async (action, first = false) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -96,14 +116,14 @@ export default function Home({ onEnter }) {
         <section className="start-demo" id="examples" ref={demoRef} aria-label={t('Begini hasilnya')}>
           <div className="start-demo-heading"><span>{t('Contoh cerita fiksi')}</span><strong>{t(examples[demoIndex].detail)}</strong></div>
           <div className="start-demo-stage"><div className="demo-margin-note"><span>01</span><p>{t('Begini hasilnya')}</p></div>
-            <div key={demoIndex} className="start-demo-phone" aria-hidden="true" style={{ width: demoSize.outerWidth * demoScale, height: demoSize.outerHeight * demoScale }}>
-              <ProjectProvider previewProject={demoProject}><PhoneContainer slide={demo} zoom={demoScale} /></ProjectProvider>
+            <div key={demoIndex} className="start-demo-phone" aria-hidden="true" style={{ width: demoWidth * demoScale, height: demoHeight * demoScale }}>
+              <ProjectProvider previewProject={demoProject}>{isCollage ? <OutputRenderer slide={demo} zoom={demoScale} /> : <PhoneContainer slide={demo} zoom={demoScale} />}</ProjectProvider>
             </div>
           </div>
           <div className="start-demo-picker" role="group" aria-label={t('Pilih contoh tampilan')}>
             {examples.slice(0, 5).map((item, index) => <button key={item.label} type="button" aria-pressed={demoIndex === index} className={demoIndex === index ? 'active' : ''} onClick={() => setDemoIndex(index)}>{t(item.label)}</button>)}
           </div>
-          <label className="field start-more-demos"><span>{t('Lihat aplikasi lainnya')}</span><select value={demoIndex} onChange={event => setDemoIndex(Number(event.target.value))}>{examples.map((item, index) => <option key={item.label} value={index}>{t(item.label)}</option>)}</select></label>
+          <label className="field start-more-demos"><span>{t('Lihat aplikasi lainnya')}</span><select aria-label={t('Lihat aplikasi lainnya')} value={demoIndex} onChange={event => setDemoIndex(Number(event.target.value))}>{examples.map((item, index) => <option key={item.label} value={index}>{t(item.label)}</option>)}</select></label>
         </section>
       </section>
       {busy && <p role="status">{t('Menyiapkan ruang ceritamu…')}</p>}
@@ -123,7 +143,7 @@ export default function Home({ onEnter }) {
         <p className="field-hint">{t('Simpan file cerita untuk memindahkan atau mencadangkan hasil editmu.')}</p>
       </section>
     </div><PublicFooter />
-    <input ref={fileRef} type="file" accept=".aujson,.json,application/json" className="visually-hidden" aria-label={t('Buka file cerita')} onChange={loadFile} />
+    <input ref={fileRef} type="file" accept=".aujson,.json,application/json" className="visually-hidden" tabIndex={-1} aria-label={t('Buka file cerita')} onChange={loadFile} />
   </main>;
 }
 
@@ -139,6 +159,8 @@ export function InfoPage({ about = false }) {
     ['3. Simpan dan bagikan', 'Lanjutkan ke slide baru membuat salinan adegan. Pilih Unduh gambar untuk PNG atau semua slide dalam ZIP.'],
     ['Apa bedanya gambar dan file cerita?', 'PNG adalah gambar yang bisa langsung dibagikan. ZIP berisi gambar semua slide. File .aujson menyimpan isi cerita, tokoh, dan pengaturan agar bisa dibuka dan diedit lagi di Auverie.'],
     ['Di mana ceritaku disimpan?', 'Perubahan disimpan otomatis di browser dan perangkat ini. File cerita menjadi cadanganmu jika pindah perangkat, menghapus data browser, atau memakai mode privat.'],
+    ['Apa bedanya tema editor dan layar HP?', 'Tombol matahari atau bulan mengubah tampilan Auverie. Untuk tema aplikasi dalam cerita, buka Tampilan layar pada panel Edit. Setiap adegan dapat memiliki tema sendiri.'],
+    ['Apakah bahasa mengubah isi cerita?', 'ID / EN mengubah bahasa tombol dan bantuan. Nama tokoh serta isi cerita tetap seperti yang kamu tulis. Bahasa label aplikasi di mockup dapat diatur lewat Bahasa layar HP.'],
     ['Bagaimana menampilkan keyboard atau stiker?', 'Pada panel Edit, buka Kolom ketik dan keyboard. Aktifkan Keyboard terbuka atau isi Draft belum dikirim. Untuk stiker, pilih jenis konten Stiker lalu unggah gambar atau pilih koleksi.'],
     ['Bagaimana mengambil setengah layar?', 'Buka Hasil gambar lalu pilih Setengah atas, Setengah bawah, atau Fokus keyboard. Lihat hasilnya sebelum mengunduh. Potongan tidak mengubah baris teks.']
   ];

@@ -47,7 +47,7 @@ button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .46; }
 button, input, textarea, select { -webkit-tap-highlight-color: transparent; }
-:focus-visible { outline: 3px solid #d09744; outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--accent-primary); outline-offset: 2px; }
 ::selection { color: #fff; background: #176c59; }
 ::placeholder { color: var(--text-muted); opacity: 1; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }

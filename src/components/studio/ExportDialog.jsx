@@ -94,7 +94,7 @@ export default function ExportDialog({ onClose }) {
           <label><input type="radio" checked={surface === 'screen'} onChange={() => setSurface('screen')} />{t('Layar saja')}</label>
           <label><input type="radio" checked={surface === 'phone'} onChange={() => setSurface('phone')} />{t('HP dengan bingkai')}</label>
         </fieldset>
-        <label className="field"><span>{t('Ketajaman gambar')}</span><select disabled={busy} value={resolution} onChange={event => setResolution(Number(event.target.value))}>
+        <label className="field"><span>{t('Ketajaman gambar')}</span><select aria-label={t('Ketajaman gambar')} disabled={busy} value={resolution} onChange={event => setResolution(Number(event.target.value))}>
           <option value="1">{t('Standar · 1×')}</option><option value="2">{t('Tajam · 2×')}</option><option value="3">{t('Paling tajam · 3×')}</option></select></label>
         <p className="field-hint">{t('Ukuran gambar: {width} × {height} piksel. Sisi terpanjang maksimal 4096 piksel.', { width: Math.round(dimensions.width * Math.min(resolution, 4096 / Math.max(dimensions.width, dimensions.height))), height: Math.round(dimensions.height * Math.min(resolution, 4096 / Math.max(dimensions.width, dimensions.height))) })}</p>
       </div>

@@ -23,5 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Generated visual QA artifacts (recreate with npm run test:browser)
-docs/qa/
+.env
+.env.*
+!.env.example
+.vercel

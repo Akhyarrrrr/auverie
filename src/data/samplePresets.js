@@ -1,4 +1,3 @@
-// Curated Asset Library & Templates for AU Studio
 
 export const AESTHETIC_AVATARS = [
   { id: "av-1", name: "Reyhan (Gitaris)", url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80", tag: "Cowok" },

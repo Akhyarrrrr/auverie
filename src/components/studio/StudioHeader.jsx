@@ -63,7 +63,7 @@ export default function StudioHeader({ onOpenScript, onOpenExport, onGuide }) {
         </div>}
       </div><button className="button primary header-download" aria-label={t('Unduh gambar')} onClick={onOpenExport}><Download size={17} /><span>{t('Unduh gambar')}</span></button>
     </div>
-    <input ref={fileRef} className="visually-hidden" type="file" accept=".aujson,.json,application/json" aria-label={t('Buka file cerita')} onChange={loadFile} />
+    <input ref={fileRef} className="visually-hidden" type="file" accept=".aujson,.json,application/json" tabIndex={-1} aria-label={t('Buka file cerita')} onChange={loadFile} />
     {saveStatus === 'error' && <div className="save-warning" role="alert"><span>{t('Cerita tidak dapat disimpan. Unduh file cerita sebagai cadangan, lalu coba lagi.')}</span><button className="text-button" onClick={() => run(saveNow)}>{t('Coba lagi')}</button></div>}
     {error && <div className="header-error" role="alert">{errorText(error)}<button onClick={() => setError('')} aria-label={t('Tutup pesan')}>×</button></div>}
   </header>;

@@ -240,7 +240,11 @@ export const english = {
   'Pilih Ubah isi lalu ketuk elemen. Perubahan hanya berlaku di adegan ini.': 'Choose Edit content and tap an element. Changes apply only to this scene.',
   'Kembali': 'Back', 'Kirim': 'Send', 'Putar': 'Play', 'Jeda': 'Pause', 'Cari': 'Search', 'Menu lainnya': 'More options',
   'Centang': 'Checkmark', 'Dua centang': 'Double checkmark', 'Panah kanan': 'Right arrow', 'Panah atas': 'Up arrow',
-  'Ulang': 'Repeat', 'Acak': 'Shuffle', 'Sebelumnya': 'Previous', 'Tombol angka': 'Number keys', 'Kamera': 'Camera', 'Mikrofon': 'Microphone'
+  'Ulang': 'Repeat', 'Acak': 'Shuffle', 'Sebelumnya': 'Previous', 'Tombol angka': 'Number keys', 'Kamera': 'Camera', 'Mikrofon': 'Microphone',
+  'Apa bedanya tema editor dan layar HP?': 'How do editor and phone themes differ?',
+  'Tombol matahari atau bulan mengubah tampilan Auverie. Untuk tema aplikasi dalam cerita, buka Tampilan layar pada panel Edit. Setiap adegan dapat memiliki tema sendiri.': 'The sun or moon button changes Auverie’s appearance. For the app theme in your story, open Screen appearance in Edit. Each scene can have its own theme.',
+  'Apakah bahasa mengubah isi cerita?': 'Does the language change my story?',
+  'ID / EN mengubah bahasa tombol dan bantuan. Nama tokoh serta isi cerita tetap seperti yang kamu tulis. Bahasa label aplikasi di mockup dapat diatur lewat Bahasa layar HP.': 'ID / EN changes buttons and help text. Character names and story content stay as you wrote them. App labels in the mockup can be set using Phone screen language.'
 };
 
 export function translate(text, locale, values = {}) {

@@ -33,7 +33,7 @@
 .start-demo-heading strong { font-size: 12px; text-align: right; }
 .start-demo-stage { min-height: 543px; display: flex; align-items: center; justify-content: center; position: relative; border-block: 1px solid var(--border-subtle); padding: 14px 0; background: var(--bg-tertiary); }
 .start-demo-phone { position: relative; flex: none; animation: scene-in .2s ease-out; }
-.start-demo-phone > .phone-mockup-outer { position: absolute; inset: 0; }
+.start-demo-phone > .phone-mockup-outer, .start-demo-phone > .composition-canvas { position: absolute; inset: 0; }
 .demo-margin-note { position: absolute; left: 14px; top: 22px; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; }
 .demo-margin-note span { font-family: 'Fraunces', Georgia, serif; font-size: 22px; }
 .demo-margin-note p { writing-mode: vertical-rl; margin-top: 14px; }

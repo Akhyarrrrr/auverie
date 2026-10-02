@@ -47,7 +47,7 @@ export default function StoryboardStrip({ onSelectSlide }) {
       <button className="icon-button" onClick={() => setShowAdd(value => !value)} aria-label={t('Tambah slide')} aria-expanded={showAdd}><Plus size={19} /></button>
     </div>
     {showAdd && <div className="add-type-list">
-      <label className="field"><span>{t('1. Pilih aplikasi')}</span><select value={app} onChange={event => setApp(event.target.value)}>
+      <label className="field"><span>{t('1. Pilih aplikasi')}</span><select aria-label={t('1. Pilih aplikasi')} value={app} onChange={event => setApp(event.target.value)}>
         {SCENE_APPS.map(item => <option key={item.id} value={item.id}>{t(item.name)}</option>)}
       </select></label>
       <p className="field-hint">{t('2. Pilih adegan')}</p>

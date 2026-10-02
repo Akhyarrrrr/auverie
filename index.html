@@ -17,6 +17,13 @@
       .boot-loading button { min-height: 44px; padding: 10px 18px; border: 0; border-radius: 7px; background: #176c59; color: white; font: inherit; cursor: pointer; }
     </style>
     <script>
+      var appLoadFailed = false;
+      window.addEventListener('error', event => {
+        if (event.target?.tagName === 'SCRIPT' || event instanceof ErrorEvent) {
+          appLoadFailed = true;
+          if (typeof showLoadError === 'function' && document.getElementById('boot-loading')) showLoadError();
+        }
+      }, true);
       try {
         document.documentElement.dataset.studioTheme = localStorage.getItem('au_studio_theme') === 'dark' ? 'dark' : 'light';
         document.documentElement.lang = localStorage.getItem('auverie_language') === 'en' ? 'en' : 'id';
@@ -36,7 +43,8 @@
         document.getElementById('boot-retry').hidden = false;
         document.getElementById('boot-loading').setAttribute('role', 'alert');
       }
+      if (appLoadFailed) showLoadError();
     </script>
-    <script type="module" src="/src/main.jsx" onerror="showLoadError()"></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

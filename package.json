@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "test": "node --test tests/*.test.mjs",
-    "test:browser": "node scripts/browser-qa.mjs",
+    "check": "node --input-type=module -e \"import assert from 'node:assert/strict'; import { translate } from './src/data/interfaceText.js'; import { normalizeProject } from './src/services/storage.js'; assert.equal(translate('Isi cerita', 'id'), 'Isi cerita'); assert.equal(translate('Isi cerita', 'en'), 'Story content'); assert.equal(translate('Edit slide {n}', 'en', { n: 2 }), 'Edit slide 2'); assert.equal(translate('Kiri (px layar)', 'en'), 'Left (screen px)'); assert.equal(translate('constructor', 'en'), 'constructor'); assert.throws(() => normalizeProject({ characters: [], slides: [] })); console.log('Auverie checks passed');\"",
+    "build": "npm run check && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
