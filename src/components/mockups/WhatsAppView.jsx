@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { whatsappColors } from '../../data/whatsappThemes';
+import { Avatar } from './SceneParts';
 
 const keyRows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 
@@ -61,14 +62,7 @@ export default function WhatsAppView({ slide, isGroup = false, previewCharacters
             <ChevronLeft size={22} strokeWidth={2.5} />
             {content.backCount && <span>{content.backCount}</span>}
           </div>
-          <img
-            src={isGroup ? content.groupAvatar || targetChar.avatar : targetChar.avatar}
-            alt={targetChar.name}
-            className="wa-avatar"
-            onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
-            }}
-          />
+          <Avatar person={{ ...targetChar, avatar: isGroup ? content.groupAvatar || targetChar.avatar : targetChar.avatar }} className="wa-avatar" />
           <div className="wa-user-info">
             <span className="wa-user-name">
               {isGroup ? (content.groupTitle || "Grup Obrolan") : targetChar.name}
@@ -152,7 +146,7 @@ export default function WhatsAppView({ slide, isGroup = false, previewCharacters
                   /* Voice note with waveform and avatar. */
                   <div className="wa-vn-wrapper">
                     <div className="wa-vn-avatar-box">
-                      <img src={sender.avatar} alt="" className="wa-vn-avatar" />
+                      <Avatar person={sender} className="wa-vn-avatar" size={36} />
                     </div>
                     <div className="wa-vn-play-btn" aria-hidden="true"><Play size={14} fill="currentColor" /></div>
                     <div className="wa-vn-waveform">

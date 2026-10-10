@@ -98,7 +98,7 @@ export async function batchExportSlidesAsZip(slides, renderSlideAsync, projectTi
 
     // Call callback to render the specific slide and get its DOM blob
     const blob = await renderSlideAsync(slide, i);
-    const paddedIndex = String(i + 1).padStart(2, '0');
+    const paddedIndex = String(slide.order || i + 1).padStart(2, '0');
     const safeType = slide.type || 'screen';
     folder.file(`${paddedIndex}_${safeType}.png`, blob);
   }
@@ -109,5 +109,19 @@ export async function batchExportSlidesAsZip(slides, renderSlideAsync, projectTi
 
   const content = await zip.generateAsync({ type: 'blob' });
   saveAs(content, `${folderName}_all_slides.zip`);
+  return true;
+}
+
+export async function batchExportSlidesAsFiles(slides, renderSlideAsync, projectTitle = 'AU_Story', onProgress) {
+  const prefix = (projectTitle || 'AU_Story').replace(/[^a-z0-9_-]/gi, '_');
+  const total = slides.length;
+  for (let i = 0; i < total; i++) {
+    const slide = slides[i];
+    onProgress?.({ current: i + 1, total, slideTitle: slide.title || `Slide ${i + 1}` });
+    const blob = await renderSlideAsync(slide, i);
+    const paddedIndex = String(slide.order || i + 1).padStart(2, '0');
+    const title = (slide.title || slide.type || 'slide').replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '') || 'slide';
+    saveAs(blob, `${prefix}_${paddedIndex}_${title}.png`);
+  }
   return true;
 }

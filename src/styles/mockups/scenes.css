@@ -19,15 +19,15 @@
 button.native-control { cursor: pointer; }
 button.native-control:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 3px; }
 .native-control svg { flex-shrink: 0; }
-.native-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.avatar-initial { display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+.native-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; aspect-ratio: 1; overflow: hidden; }
+.native-avatar-empty { display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #566779; }
 .native-page-header, .native-chat-header { padding: 48px 15px 10px; min-height: 104px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; justify-content: space-between; background: var(--app-header); color: var(--app-header-text, var(--app-text)); z-index: 2; }
 .native-page-header > strong { flex: 1; font-size: 19px; font-weight: 650; }
 .android .native-page-header, .android .native-chat-header { padding-top: 34px; min-height: 92px; }
 .native-chat-header-start, .native-chat-contact { display: flex; align-items: center; min-width: 0; gap: 8px; }
 .native-chat-header-start { flex: 1; }
 .native-chat-contact { flex-shrink: 1; justify-content: flex-start; }
-.native-chat-contact > span { min-width: 0; display: flex; flex-direction: column; text-align: left; }
+.native-chat-contact > span:not(.native-avatar) { min-width: 0; display: flex; flex-direction: column; text-align: left; }
 .native-chat-contact strong { font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .native-chat-contact small { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .native-chat-header-actions { display: flex; gap: 17px; align-items: center; }
@@ -54,7 +54,7 @@ button.native-control:focus-visible { outline: 2px solid var(--app-accent); outl
 .native-message-reactions { border-radius: 15px; padding: 2px 6px; margin-top: 2px; background: var(--app-surface); color: var(--app-text); font-size: 15px; width: fit-content; }
 .native-sender { display: block; margin-bottom: 3px; font-size: 13px; font-weight: 600; }
 .native-forwarded { display: block; font-style: italic; margin-bottom: 5px; }
-.native-quote { border-left: 3px solid var(--app-accent); background: #00000015; border-radius: 7px; padding: 7px 9px; margin-bottom: 6px; display: flex; flex-direction: column; font-size: 13px; }
+.native-quote { border-left: 1px solid var(--app-accent); background: #00000015; border-radius: 7px; padding: 7px 9px; margin-bottom: 6px; display: flex; flex-direction: column; font-size: 13px; }
 .native-quote strong { color: var(--app-accent); }
 .kind-system { justify-content: center !important; }
 .kind-system .native-bubble { background: transparent; color: var(--app-muted); font-size: 12px; text-align: center; max-width: 100%; }
@@ -107,7 +107,7 @@ button.native-control:focus-visible { outline: 2px solid var(--app-accent); outl
 .native-composer-pill .native-control { color: var(--app-muted); }
 .composer-send { background: var(--app-accent); color: #fff; width: 34px; height: 34px; border-radius: 50%; }
 .composer-send svg { width: 22px; }
-.native-composer-reply { flex-basis: 100%; display: flex; flex-direction: column; font-size: 13px; color: var(--app-text); padding: 5px 12px; border-left: 3px solid var(--app-accent); }
+.native-composer-reply { flex-basis: 100%; display: flex; flex-direction: column; font-size: 13px; color: var(--app-text); padding: 5px 12px; border-left: 1px solid var(--app-accent); }
 .native-composer-reply .native-control { position: absolute; right: 15px; top: 8px; }
 .native-recording { display: flex; gap: 15px; align-items: center; flex: 1; color: #ed4538; padding: 10px; }
 
@@ -202,6 +202,11 @@ button.native-control:focus-visible { outline: 2px solid var(--app-accent); outl
 .native-list-copy { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
 .native-list-copy > strong { font-size: 17px; font-weight: 600; }
 .native-list-copy > span { color: var(--app-muted); font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.native-list-tags { display: inline-flex; align-items: center; gap: 7px; color: var(--app-accent) !important; font-size: 11px !important; font-weight: 650; }
+.native-list-tags > span { color: inherit; }
+.native-list-empty { padding: 24px 16px; text-align: center; color: var(--app-muted); }
+.native-menu-message { margin-bottom: 10px; padding: 10px 12px; background: var(--app-surface); border-radius: 8px; }
+.native-menu-message p { max-height: 76px; overflow: hidden; }
 .native-list-end { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
 .native-list-end b { background: var(--app-accent); color: white; border-radius: 13px; padding: 2px 6px; font-size: 12px; }
 .native-bottom-nav { display: flex; justify-content: space-around; padding: 12px 6px 26px; min-height: 77px; flex-shrink: 0; border-top: 1px solid var(--app-line); background: var(--app-header); }
@@ -264,7 +269,7 @@ button.native-control:focus-visible { outline: 2px solid var(--app-accent); outl
 .liked, .native-control.active { color: var(--app-accent); }
 .native-media-screen { position: relative; display: flex; flex-direction: column; height: 100%; color: #fff; padding-top: 45px; }
 .native-media-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; z-index: 2; }
-.native-media-header > span { display: flex; flex: 1; flex-direction: column; }
+.native-media-header > span:not(.native-avatar) { display: flex; flex: 1; min-width: 0; flex-direction: column; }
 .native-media-header small { color: #fffa; }
 .native-media-stage { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
 .native-media-stage > .native-media { height: 100%; width: 100%; display: grid; place-items: center; }
@@ -284,6 +289,7 @@ button.native-control:focus-visible { outline: 2px solid var(--app-accent); outl
 .native-story-free-sticker { position: absolute; z-index: 3; }
 .native-media-bottom { display: flex; align-items: center; padding: 15px 13px 30px; gap: 18px; z-index: 2; margin-top: auto; }
 .native-media-bottom > span { border: 1px solid #fff7; border-radius: 30px; flex: 1; padding: 10px 15px; font-size: 14px; }
+.native-media-bottom > .native-media-caption { border: 0; border-radius: 0; padding: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .native-reel-actions { position: absolute; right: 15px; bottom: 145px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .native-call-screen { padding: 90px 25px 60px; height: 100%; display: flex; align-items: center; flex-direction: column; color: white; background-size: cover; background-position: center; }
 .native-call-app { color: #ddd !important; margin-bottom: 35px; }
@@ -337,6 +343,7 @@ button.native-control:focus-visible { outline: 2px solid var(--app-accent); outl
 .custom-block.block-media { padding: 0; }
 .custom-block.block-media .native-media, .custom-block.block-media img { width: 100%; height: 100%; }
 .native-album-page { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+.native-album-caption { padding: 2px 3px 8px; color: var(--app-muted); white-space: pre-wrap; }
 .native-album-page .native-album-grid .native-control { aspect-ratio: 1; overflow: hidden; }
 .native-shared-album-title { display: block; padding: 9px; font-size: 16px; }
 .native-shared-album-footer { display: block; padding: 9px; }

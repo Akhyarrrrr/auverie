@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useProject } from '../../context/ProjectContext';
 import { appDefinition, isConversation, MESSAGE_KINDS, MESSAGE_LABELS, messageKind, sceneIdentity, SCREEN_LABELS, SCREEN_LABELS_EN } from '../../data/sceneCatalog';
+import { INBOX_FILTERS, sceneCapabilities, validOverlay } from '../../data/sceneCapabilities';
 import { whatsappColors } from '../../data/whatsappThemes';
 import { finite } from '../../services/sceneModel';
 import { Avatar, MediaContent, NativeControl, NativeIcon, SceneViewport, useSceneText } from './SceneParts';
@@ -99,6 +100,9 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
   const { project, getCharacter, updateSlideContent, updateSlideMeta, setEditTarget } = useProject();
   const { app, screen } = sceneIdentity(slide);
   const definition = appDefinition(app), c = slide.content || {}, state = slide.sceneState || {};
+  const capabilities = sceneCapabilities(app, screen, c, state);
+  const overlay = validOverlay(app, screen, c, state);
+  const menuMessage = c.messages?.find(item => item.id === state.messageId) || c.messages?.[0];
   const [picker, setPicker] = useState(null);
   const locale = slide.customSettings?.locale || 'id';
   const text = useSceneText(slide);
@@ -121,11 +125,11 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
   };
   const action = interactive ? value => {
     if (!value) return;
-    const message = c.messages?.find(item => item.id === (value.id || state.messageId));
+    const message = c.messages?.find(item => item.id === (value.id || state.messageId)) || menuMessage;
     switch (value.type) {
       case 'go': navigate(value.screen, value.personId ? { personId: value.personId } : {}); break;
       case 'back': patchState({ screen: state.history?.at(-1) || definition.screens[0], history: (state.history || []).slice(0, -1), overlay: null }); break;
-      case 'overlay': patchState({ overlay: value.value }); break;
+      case 'overlay': patchState({ overlay: validOverlay(app, screen, c, { ...state, overlay: value.value }) || null }); break;
       case 'close-overlay': patchState({ overlay: null }); break;
       case 'draft': patch({ draftText: value.value, caretPosition: value.value.length }); break;
       case 'caret': updateSlideContent(slide.id, { caretPosition: value.value }, false); break;
@@ -153,7 +157,7 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
       case 'add-card': { const id = crypto.randomUUID(); append({ id, kind: value.kind, title: MESSAGE_LABELS[value.kind], text: '' });
         setEditTarget(`message:${id}`); break; }
       case 'media': navigate('media', { media: value.message }); break;
-      case 'message-menu': patchState({ overlay: 'message-menu', messageId: value.id }); break;
+      case 'message-menu': if (isConversation(screen) && c.messages?.length) patchState({ overlay: 'message-menu', messageId: value.id }); break;
       case 'react': case 'reply': case 'delete': case 'forward': case 'pin': case 'edit-message': {
         if (!message) { patchState({ overlay: null }); break; }
         const updates = value.type === 'reply' ? { composerReply: { senderName: getPerson(message.senderId).name, textPreview: message.text || MESSAGE_LABELS[messageKind(message)] }, showKeyboard: true }
@@ -256,23 +260,28 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
     const allItems = c[key]?.length ? c[key] : ['inbox', 'contacts', 'calls', 'requests'].includes(screen) ? [
       { id: 'contact-default', characterId: person.id, name: c.contactName || person.name, text: c.messages?.at(-1)?.text || c.statusText, time: c.timestamp, unread: c.unreadCount }
     ] : [];
-    const items = allItems.filter(item => state.inboxFilter === 'unread' ? item.unread > 0 : state.inboxFilter === 'groups' ? item.isGroup : state.inboxFilter === 'favorites' ? item.isFavorite : true);
+      const items = allItems.filter(item => !capabilities.inboxFilters ? true : state.inboxFilter === 'unread' ? item.unread > 0 : state.inboxFilter === 'groups' ? item.isGroup : state.inboxFilter === 'favorites' ? item.isFavorite : true);
     body = <>{screen === 'inbox' ? mainHeader(app === 'x' ? 'Chat' : app === 'whatsapp' && platform === 'android' ? 'WhatsApp' : text('chats', 'Chats', 'Chat'))
       : header(screenLabel(screen), control('plus', 'Buat baru', { type: 'edit', target: 'scene-list' }))}
       {screen !== 'notifications' && <div className="native-search" data-edit-target="search">⌕ {c.searchText || text('search', 'Search', 'Cari')}</div>}
-      {app === 'whatsapp' && screen === 'inbox' && <div className="native-chat-filters" data-edit-target="chat-filters">{[['all', 'All', 'Semua'], ['unread', 'Unread', 'Belum dibaca'], ['favorites', 'Favorites', 'Favorit'], ['groups', 'Groups', 'Grup']].map(([value, en, id]) =>
+      {['whatsapp', 'messenger'].includes(app) && screen === 'inbox' && <div className="native-chat-filters" data-edit-target="chat-filters">{INBOX_FILTERS.map(([value, en, id]) =>
         <NativeControl key={value} label={text(value, en, id)} onAction={action} action={{ type: 'inbox-filter', value }} className={(state.inboxFilter || 'all') === value ? 'active' : ''}>{text(value, en, id)}</NativeControl>)}</div>}
       {['instagram', 'messenger'].includes(app) && ['inbox', 'requests'].includes(screen) && <div className="native-inbox-notes" data-edit-target="notes">
         <NativeControl label="Notes" action={{ type: 'go', screen: 'notes' }} onAction={action}><Avatar person={getPerson('me')} size={62} /><small>{c.noteText || text('yourNote', 'Your note', 'Catatan Anda')}</small></NativeControl>
         <NativeControl label="Permintaan pesan" action={{ type: 'go', screen: 'requests' }} onAction={action}>{text('requests', 'Requests', 'Permintaan')} {c.requestsCount || '0'}</NativeControl></div>}
       {viewport(items.map(item => <NativeControl key={item.id} className="native-list-row" label={item.name || item.title || 'Buka'} onAction={action}
-        action={screen === 'note_list' ? { type: 'open-note', note: item } : { type: 'go', screen: screen === 'contacts' ? 'info' : screen === 'calls' ? 'call' : screen === 'notifications' ? 'post' : 'chat', personId: item.characterId }}
+        action={screen === 'note_list' ? { type: 'open-note', note: item } : { type: 'go', screen: screen === 'contacts' ? 'info' : screen === 'calls' ? 'call' : screen === 'notifications' ? 'post' : item.isGroup ? 'group' : 'chat', personId: item.characterId }}
         target={`${key}:${item.id}`}>
         {screen !== 'note_list' && <Avatar person={item.imageUrl ? { name: item.name, avatar: item.imageUrl } : getPerson(item.characterId || person.id)} size={screen === 'calls' ? 40 : 56} />}
-        <span className="native-list-copy"><strong>{item.name || item.title || getPerson(item.characterId).name}</strong><span>{item.text || item.message || item.phoneNumber}</span>
-          {screen === 'calls' && <small className={item.status === 'missed' ? 'missed-call' : ''}>{item.callStatus || item.status || text('incoming', 'Incoming', 'Masuk')} · {item.duration}</small>}</span>
-        <span className="native-list-end"><small>{item.time}</small>{item.unread > 0 && <b>{item.unread}</b>}{screen === 'calls' && <NativeIcon name="phone" size={21} />}</span>
-      </NativeControl>))}{tabs()}</>;
+         <span className="native-list-copy"><strong>{item.name || item.title || getPerson(item.characterId).name}</strong>
+           {screen !== 'calls' && <span>{screen === 'contacts' ? item.phoneNumber || item.text : item.text || item.message}</span>}
+           {screen === 'inbox' && (item.isGroup || item.isFavorite) && <small className="native-list-tags">{item.isGroup && <span>{text('group', 'Group', 'Grup')}</span>}{item.isFavorite && <span role="img" aria-label={text('favorite', 'Favorite', 'Favorit')}><NativeIcon name="star" size={13} fill /></span>}</small>}
+           {screen === 'calls' && <small className={(item.callStatus || item.status) === 'missed' ? 'missed-call' : ''}>{text(`call-${item.callStatus || item.status || 'incoming'}`,
+             { incoming: 'Incoming', outgoing: 'Outgoing', missed: 'Missed', rejected: 'Declined' }[item.callStatus || item.status || 'incoming'] || item.callStatus,
+             { incoming: 'Masuk', outgoing: 'Keluar', missed: 'Tidak terjawab', rejected: 'Ditolak' }[item.callStatus || item.status || 'incoming'] || item.callStatus)}{item.duration ? ` · ${item.duration}` : ''}</small>}</span>
+         <span className="native-list-end"><small>{item.time}</small>{['inbox', 'requests', 'notifications'].includes(screen) && item.unread > 0 && <b>{item.unread}</b>}{screen === 'calls' && <NativeIcon name="phone" size={21} />}</span>
+       </NativeControl>))}
+       {!items.length && <p className="native-list-empty">{text('emptyList', 'No items in this list', 'Belum ada item di daftar ini')}</p>}{tabs()}</>;
   } else if (['profile', 'info'].includes(screen)) {
     const social = ['instagram', 'facebook', 'x', 'tiktok'].includes(app);
     body = <>{header(c.profileTitle || person.handle?.replace('@', '') || person.name)}{viewport(<>
@@ -303,7 +312,7 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
         {definition.screens.includes('story') && <NativeControl onAction={action} action={{ type: 'go', screen: 'story' }} label="Story"><Avatar person={person} size={64} /><small>{person.name}</small></NativeControl>}
         {app === 'facebook' && <NativeControl onAction={action} action={{ type: 'edit', target: 'post' }} label="Tulis postingan">{text('mind', "What's on your mind?", 'Apa yang Anda pikirkan?')}</NativeControl>}</div>}
         {(c.posts?.length && ['feed', 'group_feed'].includes(screen) ? c.posts : [c]).map(post)}
-        {(screen === 'thread' ? c.replies || [] : c.comments || []).map(comment => <div className="native-comment" key={comment.id} data-edit-target={`comment:${comment.id}`}>
+         {(screen === 'thread' ? c.replies || [] : screen === 'comments' ? c.comments || [] : []).map(comment => <div className="native-comment" key={comment.id} data-edit-target={`comment:${comment.id}`}>
           <Avatar person={getPerson(comment.authorId)} size={32} /><div><strong>{getPerson(comment.authorId).handle || getPerson(comment.authorId).name}</strong><p>{comment.text}</p>
             <small>{comment.time || comment.timestamp} · {comment.likesCount || '0'} {text('likes', 'likes', 'suka')} · {text('reply', 'Reply', 'Balas')}</small>
             {comment.replyText && <blockquote>{comment.replyText}</blockquote>}</div></div>)}
@@ -338,22 +347,24 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
   } else if (screen === 'album' && app !== 'spotify') {
     body = <>{header(c.albumTitle || c.title || text('album', 'Album', 'Album'))}{viewport(<div className="native-album-page" data-edit-target="scene-images">
       <strong>{c.albumTitle || c.title}</strong><small>{c.albumOwnerName || person.name} · {c.images?.length || 0} {text('photos', 'photos', 'foto')}</small>
-      <div className="native-album-grid">{(c.images || []).map((item, index) => <NativeControl key={item.id || index} label={`Foto ${index + 1}`} action={{ type: 'media', message: { kind: 'image', mediaUrl: item.src || item.url || item } }} onAction={action}>
-        {showImage(item.src || item.url || item, 'Foto album')}</NativeControl>)}</div>
+       <div className="native-album-grid">{(c.images || []).map((item, index) => <NativeControl key={item.id || index} label={`Foto ${index + 1}`} action={{ type: 'media', message: { kind: 'image', mediaUrl: item.src || item.url || item, isHD: c.isHD, onceState: c.onceState } }} onAction={action}>
+         {showImage(item.src || item.url || item, 'Foto album')}</NativeControl>)}</div>
+       {c.caption && <p className="native-album-caption">{c.caption}</p>}
     </div>)}{tabs()}</>;
   } else if (['story', 'status', 'instant', 'media'].includes(screen)) {
-    const media = state.media || { kind: c.mediaKind || 'image',
-      mediaUrl: c.imageUrl || c.mediaUrl || c.backgroundUrl, images: c.images, text: '', duration: c.duration };
+    const media = screen === 'media' && state.media ? { ...state.media } : { ...c, kind: c.mediaKind || 'image',
+      mediaUrl: c.imageUrl || c.mediaUrl || c.backgroundUrl, images: c.images, duration: c.duration };
     const full = ['story', 'status', 'instant'].includes(screen);
+    const mediaCaption = media.caption || media.text || '';
     body = <div className={`native-media-screen ${full ? 'full-media-screen' : ''} screen-${screen}`} style={{ backgroundColor: c.backgroundColor || '#111111' }}>
-      {full && <div className="native-story-progress" data-edit-target="story-progress">{Array.from({ length: finite(c.storySegments, 1, 1, 15) }, (_, i) => <i key={i} className={i === (state.storyIndex || 0) ? 'active' : ''} />)}</div>}
+      {full && <div className="native-story-progress" data-edit-target="story-progress">{Array.from({ length: Math.trunc(finite(c.storySegments, 1, 1, 15)) }, (_, i) => <i key={i} className={i === Math.trunc(finite(state.storyIndex, 0, 0, Math.max(0, (c.storySegments || 1) - 1))) ? 'active' : ''} />)}</div>}
       <div className="native-media-header" data-edit-target="story-header">{control('back', 'Kembali', { type: 'back' })}<Avatar person={person} size={34} />
-        <span><strong>{person.handle || person.name}</strong><small>{c.storyTime || c.timestamp}</small></span>{control('more', 'Menu media', { type: 'overlay', value: 'screen-menu' })}</div>
-      <div className="native-media-stage" data-edit-target="media"><MediaContent message={media} locale={locale} /></div>
-      {c.caption && <p className="native-story-caption" data-edit-target="story-caption">{c.caption}</p>}
-      {(c.musicSticker?.enabled ?? !!c.musicSticker?.song) && <div className="native-story-music" data-edit-target="story-stickers"><MediaContent message={{ kind: 'music', ...c.musicSticker, mediaUrl: c.musicSticker.albumArt }} /></div>}
-      {c.questionSticker?.enabled && <div className="native-story-question" data-edit-target="story-question"><b>{c.questionSticker.prompt}</b><span>{c.questionSticker.answer || text('answer', 'Type something…', 'Ketik sesuatu…')}</span></div>}
-      {(c.storyStickers || []).map(item => <div className="native-story-free-sticker" key={item.id} data-edit-target={`storySticker:${item.id}`}
+        <span><strong>{person.handle || person.name}</strong><small>{media.storyTime || media.time || c.timestamp}</small></span>{control('more', 'Menu media', { type: 'overlay', value: 'screen-menu' })}</div>
+      <div className="native-media-stage" data-edit-target="media"><MediaContent message={{ ...media, text: '', caption: '', isHD: capabilities.hd && media.isHD, onceState: capabilities.once ? media.onceState : 'normal' }} locale={locale} /></div>
+      {full && c.caption && <p className="native-story-caption" data-edit-target="story-caption">{c.caption}</p>}
+      {full && (c.musicSticker?.enabled ?? !!c.musicSticker?.song) && <div className="native-story-music" data-edit-target="story-stickers"><MediaContent message={{ kind: 'music', ...c.musicSticker, mediaUrl: c.musicSticker.albumArt }} /></div>}
+      {full && c.questionSticker?.enabled && <div className="native-story-question" data-edit-target="story-question"><b>{c.questionSticker.prompt}</b><span>{c.questionSticker.answer || text('answer', 'Type something…', 'Ketik sesuatu…')}</span></div>}
+      {full && (c.storyStickers || []).map(item => <div className="native-story-free-sticker" key={item.id} data-edit-target={`storySticker:${item.id}`}
         style={{ left: `${item.x || 10}%`, top: `${item.y || 30}%`, width: item.width || 120, transform: `rotate(${item.rotation || 0}deg)` }}>
         {item.kind === 'sticker' || item.kind === 'image' ? <MediaContent message={item} /> : <span style={{ color: item.color || '#ffffff', background: item.background }}>{item.text}</span>}</div>)}
       <div className="native-media-bottom" data-edit-target="story-reply">{full ? <>
@@ -361,7 +372,7 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
           placeholder={text('replyTo', 'Send message', 'Kirim pesan')} onChange={event => action({ type: 'draft', value: event.target.value })} />
           : <span>{c.draftText || (c.storyReplySent ? text('sent', 'Sent', 'Terkirim') : text('replyTo', 'Send message', 'Kirim pesan'))}</span>}
         {control('heart', 'Suka', { type: 'like' })}{control('send', 'Kirim balasan', { type: 'send' })}</>
-        : <><span>{media.caption || c.caption || media.time}</span>{control('share', 'Bagikan media', { type: 'overlay', value: 'share' })}</>}
+        : <><span className="native-media-caption" data-edit-target="story-caption">{mediaCaption || media.time}</span>{control('share', 'Bagikan media', { type: 'overlay', value: 'share' })}</>}
       </div>
       {full && c.showKeyboard && <KeyboardView content={c} platform={platform} theme={theme} locale={locale} onAction={action} />}
     </div>;
@@ -431,11 +442,12 @@ export default function AppSceneView({ slide, platform, theme, interactive = fal
       ...(c.customWallpaper ? { '--chat-wallpaper': `url(${c.customWallpaper})` } : app === 'whatsapp' && c.chatPalette === 'ocean' && theme === 'dark'
         ? { '--chat-wallpaper': 'linear-gradient(to bottom, #041e30, #03070b 160px)' } : {}) }}>
     {body}
-    {state.overlay && <div className={`native-overlay overlay-${state.overlay}`} data-edit-target="overlay">
+    {overlay && <div className={`native-overlay overlay-${overlay}`} data-edit-target="overlay">
       <div className="native-overlay-dimmer" onClick={action ? () => action({ type: 'close-overlay' }) : undefined} />
-      <section className="native-overlay-sheet"><div className="native-overlay-heading"><strong>{c.overlayTitle || (state.overlay === 'stickers' ? text('stickers', 'Stickers', 'Stiker')
-        : state.overlay === 'attachments' ? text('attach', 'Attach', 'Lampiran') : state.overlay === 'message-menu' ? text('message', 'Message', 'Pesan') : text('menu', 'Menu', 'Menu'))}</strong>
+      <section className="native-overlay-sheet"><div className="native-overlay-heading"><strong>{c.overlayTitle || (overlay === 'stickers' ? text('stickers', 'Stickers', 'Stiker')
+        : overlay === 'attachments' ? text('attach', 'Attach', 'Lampiran') : overlay === 'message-menu' ? text('message', 'Message', 'Pesan') : text('menu', 'Menu', 'Menu'))}</strong>
         {control('close', 'Tutup menu', { type: 'close-overlay' })}</div>
+        {overlay === 'message-menu' && menuMessage && <div className="native-menu-message" data-edit-target={`message:${menuMessage.id}`}><small>{getPerson(menuMessage.senderId).name}</small><p>{menuMessage.text || menuMessage.caption || MESSAGE_LABELS[messageKind(menuMessage)]}</p></div>}
         {state.overlay === 'message-menu' || state.overlay === 'facebook-reactions' ? <>
           <div className="native-reaction-picker">{['👍', '❤️', '😂', '😮', '😢', '🙏'].map(value => <NativeControl key={value} onAction={action} label={value}
             action={{ type: state.overlay === 'facebook-reactions' ? 'facebook-reaction' : 'react', value }}>{value}</NativeControl>)}</div>

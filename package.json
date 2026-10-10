@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "node --input-type=module -e \"import assert from 'node:assert/strict'; import { translate } from './src/data/interfaceText.js'; import { normalizeProject } from './src/services/storage.js'; assert.equal(translate('Isi cerita', 'id'), 'Isi cerita'); assert.equal(translate('Isi cerita', 'en'), 'Story content'); assert.equal(translate('Edit slide {n}', 'en', { n: 2 }), 'Edit slide 2'); assert.equal(translate('Kiri (px layar)', 'en'), 'Left (screen px)'); assert.equal(translate('constructor', 'en'), 'constructor'); assert.throws(() => normalizeProject({ characters: [], slides: [] })); console.log('Auverie checks passed');\"",
+    "check": "node --input-type=module -e \"import assert from 'node:assert/strict'; import { translate } from './src/data/interfaceText.js'; import { normalizeProject } from './src/services/storage.js'; import { completeClock, phoneDraft, isWholeNumber } from './src/services/inputValues.js'; assert.equal(translate('Isi cerita', 'id'), 'Isi cerita'); assert.equal(translate('Isi cerita', 'en'), 'Story content'); assert.equal(translate('Edit slide {n}', 'en', { n: 2 }), 'Edit slide 2'); assert.equal(translate('Kiri (px layar)', 'en'), 'Left (screen px)'); assert.equal(translate('constructor', 'en'), 'constructor'); assert.equal(completeClock('2130'), '21:30'); assert.equal(completeClock('29:00'), null); assert.equal(phoneDraft('+62 (812) abc-90'), '+62 (812) -90'); assert.equal(isWholeNumber('12'), true); assert.equal(isWholeNumber('1.2'), false); assert.throws(() => normalizeProject({ characters: [], slides: [] })); console.log('Auverie checks passed');\"",
     "build": "npm run check && vite build",
     "preview": "vite preview"
   },

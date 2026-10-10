@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { finite } from '../../services/sceneModel';
 import { messageKind } from '../../data/sceneCatalog';
 
@@ -30,7 +30,7 @@ const paths = {
   like: 'M7 10 11 2h3v7h6c2 0 2 2 1 4l-2 8H7V10ZM2 10h5v11H2V10Z',
   speaker: 'M3 9h4l6-5v16l-6-5H3V9Zm14-2a8 8 0 0 1 0 10m-2-7a3 3 0 0 1 0 4',
   shuffle: 'M3 5h3c5 0 7 14 12 14h3m-4-4 4 4-4 4M3 19h3c5 0 7-14 12-14h3m-4-4 4 4-4 4',
-  previous: 'M5 4v16m14-16L7 12l12 8V4Z', next: 'M19 4v16M5 4l12 8-12 8V4Z',
+  previous: 'M5 4v16m14-16L7 12l12 8V4Z', next: 'M19 4v16M5 4l12 8-12 8V4Z', star: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.5-4.4 6.2-.9L12 3Z',
   return: 'M20 4v9H4m6-6-6 6 6 6', keypad: 'M5 4h.01M12 4h.01M19 4h.01M5 12h.01M12 12h.01M19 12h.01M5 20h.01M12 20h.01M19 20h.01',
 };
 export function NativeIcon({ name, size = 24, fill = false, ...props }) {
@@ -46,9 +46,14 @@ export function NativeControl({ children, label, action, onAction, className = '
     : <span className={`native-control ${className}`} data-edit-target={target || `control:${label}`} {...props}>{children}</span>;
 }
 export function Avatar({ person = {}, size, className = '', ...props }) {
-  return person.avatar ? <img src={person.avatar} alt={person.name || 'Foto profil'} className={`native-avatar ${className}`}
-    style={size ? { width: size, height: size } : undefined} {...props} />
-    : <span className={`native-avatar avatar-initial ${className}`} style={{ background: person.color || '#687887', ...(size ? { width: size, height: size } : {}) }} {...props}>{(person.name || '?').slice(0, 1)}</span>;
+  const [failedSource, setFailedSource] = useState(null);
+  const style = { background: person.color || '#566779', ...(size ? { width: size, height: size } : {}), ...props.style };
+  const shared = { ...props, style, className: `native-avatar ${className}` };
+  return person.avatar && failedSource !== person.avatar
+    ? <img {...shared} src={person.avatar} alt={person.name || 'Foto profil'} onError={() => setFailedSource(person.avatar)} />
+    : <span {...shared} className={`${shared.className} native-avatar-empty`} role="img" aria-label={person.name || 'Foto profil'}>
+      <NativeIcon name="person" size={Math.round((size || 40) * .58)} />
+    </span>;
 }
 export function useSceneText(slide) {
   return (key, en, id = en) => slide.content?.labels?.[key] ?? ((slide.customSettings?.locale || 'id') === 'en' ? en : id);

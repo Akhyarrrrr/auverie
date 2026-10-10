@@ -8,7 +8,7 @@ Ceritamu, layar demi layar. Buat cerita AU melalui percakapan, postingan, notifi
 2. Tambahkan slide, lalu pilih aplikasi dan adegan. **Coba layar HP** digunakan untuk mengetik, mengirim konten cerita, serta membuka layar dan menu aplikasi.
 3. Pilih **Ubah isi** untuk mengedit melalui pratinjau. Panel Edit dibagi menjadi **Isi cerita**, **Tampilan layar**, dan **Hasil gambar**. Mode **Lanjut** membuka detail tambahan.
 4. **Lanjutkan ke slide baru** membuat salinan adegan. Perubahan berikutnya tidak mengubah slide sebelumnya.
-5. Atur layar penuh, setengah layar, fokus keyboard, crop manual, atau kolase. Periksa **Lihat hasil**, lalu **Unduh gambar** sebagai PNG atau ZIP seluruh slide.
+5. Atur layar penuh, setengah layar, fokus keyboard, crop manual, atau kolase. Periksa **Lihat hasil**, lalu **Unduh gambar** sebagai PNG, beberapa PNG terpisah, atau ZIP seluruh slide.
 
 Di HP, gunakan **Slide · Pratinjau · Edit**. Panduan awal dapat dilewati dan dibuka kembali melalui **Cerita → Panduan singkat**. Bantuan lengkap tersedia di aplikasi.
 
@@ -18,6 +18,12 @@ Bahasa antarmuka secara bawaan adalah Indonesia. Tombol **ID / EN** mengubah tom
 
 Tombol matahari/bulan mengubah tema editor. Tema terang/gelap aplikasi dalam cerita diatur per adegan melalui **Tampilan layar**. Warna, wallpaper, perangkat, draft, keyboard iPhone/Gboard/Samsung, dan detail elemen dapat disesuaikan.
 
+### Pengaturan mengikuti layar
+
+Panel **Isi cerita** memakai kemampuan layar aktif. Field percakapan, daftar chat, profil, postingan, Story, album, penampil media, Reels, panggilan, musik, Notes, dan kontak hanya muncul ketika dipakai oleh renderer layar tersebut. Mengganti layar tidak menghapus data sebelumnya, tetapi field yang tidak relevan disembunyikan agar editor tetap fokus.
+
+Waktu pada daftar chat memakai format `HH:mm`, jumlah belum dibaca memakai angka bulat, dan nomor telepon menerima angka serta simbol telepon umum. Pada WhatsApp dan Messenger, item chat dapat ditandai sebagai grup atau favorit, lalu ditampilkan dengan penanda dan filter yang sesuai.
+
 ### Cerita tersimpan dan file cadangan
 
 - Autosave menyimpan cerita di IndexedDB browser dan alamat situs yang digunakan. Status penyimpanan terlihat di editor. Cerita pada browser, perangkat, atau alamat situs lain memiliki penyimpanan terpisah.
@@ -25,6 +31,10 @@ Tombol matahari/bulan mengubah tema editor. Tema terang/gelap aplikasi dalam cer
 - **Buka file cerita** selalu membuat salinan baru. Simpan cadangan sebelum pindah perangkat, membersihkan data browser, atau pindah dari localhost ke situs online.
 - Proyek lama tetap kompatibel. Format lama WhatsApp, X, dan Instagram mempertahankan renderer yang tersimpan; **Salin ke tampilan terbaru** membuat versi baru tanpa mengganti slide lama.
 - Gambar unggahan disimpan bersama cerita. Cadangan mencoba menyematkan gambar dari tautan luar dan melaporkan yang gagal. Unggah gambar tersebut sebagai berkas agar tidak bergantung pada tautan luar.
+
+### Unduh beberapa slide
+
+**Unduh gambar** menyediakan empat pilihan: slide aktif sebagai PNG, slide pilihan sebagai file PNG terpisah, semua slide sebagai file PNG terpisah, atau semua slide sebagai ZIP. Mode slide pilihan memiliki checkbox per slide, tombol **Pilih semua**, **Kosongkan**, progress ekspor, dan nama file berurutan.
 
 ## Format layar
 
@@ -80,6 +90,6 @@ AU*v*erie tidak memerlukan akun atau mengirim cerita ke server. Aset dari URL di
 
 AU*v*erie creates AU stories as phone app scenes. Choose an app and screen, write your story, save the next moment as a new slide, and download full screens, crops, or collages. No account is required.
 
-**ID / EN** changes the interface language without translating your story. The editor theme and phone screen theme are separate. **Save a story file** creates an editable `.aujson` backup; **Download images** creates PNG or ZIP files. Stories autosave locally in the current browser and site address. Use a story file to move to another device or domain.
+**ID / EN** changes the interface language without translating your story. The editor theme and phone screen theme are separate. The editor shows only fields used by the selected screen, including conversations, lists, profiles, posts, stories, albums, media viewers, calls, music, notes, and contacts. **Save a story file** creates an editable `.aujson` backup; **Download images** creates the current PNG, selected PNG files, all PNG files, or a ZIP. Stories autosave locally in the current browser and site address. Use a story file to move to another device or domain.
 
-Run `npm ci` and `npm run dev` locally. For production, run `npm run build`; `dist/` and the included `vercel.json` are ready for a Vercel import using **main**. Scenes, video posters, audio, and calls export as static images.
+Run `npm ci` and `npm run dev` locally. Use `npm run check` for validation and `npm run build` for the production build; `dist/` and the included `vercel.json` are ready for a Vercel import using **main**. Scenes, video posters, audio, and calls export as static images.

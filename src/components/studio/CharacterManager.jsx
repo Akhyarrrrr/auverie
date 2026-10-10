@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { useUI } from '../../context/UIContext';
 import AssetPickerModal from './AssetPickerModal';
+import { Avatar } from '../mockups/SceneParts';
 
 export default function CharacterManager() {
   const { t } = useUI();
@@ -30,17 +31,17 @@ export default function CharacterManager() {
     <div className="panel-intro"><h2>{t('Tokoh cerita')}</h2><p>{t('Perubahan tokoh berlaku di slide aktif dan menjadi bawaan slide baru. Slide lain tetap seperti saat disimpan.')}</p></div>
     <div className="character-list">
       <button className={selectedId === 'me' ? 'active' : ''} onClick={() => { setSelectedId('me'); setDeleting(false); }}>
-        {getCharacter('me').avatar ? <img src={getCharacter('me').avatar} alt="" /> : <span className="avatar-fallback">{getCharacter('me').name.charAt(0)}</span>}<span>{t('Saya')}</span></button>
+        <Avatar person={getCharacter('me')} size={38} /><span>{t('Saya')}</span></button>
       {project.characters.map(character => <button key={character.id} className={selectedId === character.id ? 'active' : ''}
         onClick={() => { setSelectedId(character.id); setDeleting(false); }}>
-        {character.avatar ? <img src={character.avatar} alt="" /> : <span className="avatar-fallback">{character.name.charAt(0)}</span>}
+        <Avatar person={character} size={38} />
         <span>{character.name}</span>
       </button>)}
       <button className="character-add" onClick={add}><Plus size={21} /><span>{t('Tambah')}</span></button>
     </div>
-    <section className="settings-section"><h3>{t(selectedId === 'me' ? 'Profil saya' : 'Profil tokoh')}</h3>
+    <section className="settings-section character-profile"><h3>{t(selectedId === 'me' ? 'Profil saya' : 'Profil tokoh')}</h3>
       <div className="character-photo">
-        {active.avatar ? <img src={active.avatar} alt="" /> : <span className="avatar-fallback">{active.name.charAt(0)}</span>}
+        <Avatar person={active} size={52} />
         <button className="button secondary" onClick={() => setPickerOpen(true)}>{t('Ganti foto')}</button>
       </div>
       <label className="field"><span>{t('Nama tampilan')}</span><input value={active.name || ''} onChange={event => save({ name: event.target.value })} /></label>

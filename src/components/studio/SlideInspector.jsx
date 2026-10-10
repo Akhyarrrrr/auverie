@@ -6,6 +6,7 @@ import { PHONE_MODELS } from '../../data/samplePresets';
 import { WHATSAPP_THEMES, whatsappColors } from '../../data/whatsappThemes';
 import AssetPickerModal from './AssetPickerModal';
 import SceneInspector, { OutputSettings } from './SceneInspector';
+import { clockDraft, completeClock, isWholeNumber, phoneDraft } from '../../services/inputValues';
 
 const id = () => crypto.randomUUID();
 const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
@@ -15,11 +16,40 @@ const BLOCK_TYPES = [
   ['appbar', 'Bar aplikasi'], ['notification', 'Notifikasi'], ['media', 'Media / poster video']
 ];
 
-function Field({ label, value, onChange, placeholder = '', multiline = false, type = 'text', min, max }) {
+function Field({ label, value, onChange, placeholder = '', multiline = false, type = 'text', min, max, hint }) {
   const { t } = useUI();
+  const [draft, setDraft] = useState(String(value ?? ''));
+  useEffect(() => { setDraft(String(value ?? '')); }, [value, label]);
+  const controlledDraft = type === 'clock' || type === 'integer';
+  const invalid = draft !== '' && (type === 'clock' ? !completeClock(draft) : type === 'integer'
+    ? !isWholeNumber(draft) || (min != null && Number(draft) < min) || (max != null && Number(draft) > max) : false);
+  const change = event => {
+    const raw = event.target.value;
+    if (type === 'clock') {
+      const next = clockDraft(raw); setDraft(next);
+      const clock = completeClock(next);
+      if (clock || next === '') onChange(clock || '');
+    } else if (type === 'integer') {
+      if (!/^\d*$/.test(raw)) return;
+      setDraft(raw);
+      if (raw === '') onChange('');
+      else if (isWholeNumber(raw) && (min == null || Number(raw) >= min) && (max == null || Number(raw) <= max)) onChange(Number(raw));
+    } else if (type === 'number') {
+      if (raw === '') onChange('');
+      else if (Number.isFinite(Number(raw))) onChange(Math.max(min ?? -Infinity, Math.min(max ?? Infinity, Number(raw))));
+    } else onChange(type === 'tel' ? phoneDraft(raw) : raw);
+  };
+  const help = hint || (type === 'clock' ? 'Jam 00–23, menit 00–59. Contoh: 21:30.' : type === 'integer'
+    ? 'Hanya angka bulat, tanpa huruf atau desimal.' : type === 'tel' ? 'Angka, +, spasi, tanda kurung, dan tanda hubung.' : '');
   return <label className="field"><span>{t(label)}</span>{multiline
     ? <textarea aria-label={t(label)} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={t(placeholder)} rows={3} />
-    : <input aria-label={t(label)} type={type} min={min} max={max} value={value ?? ''} onChange={e => onChange(type === 'number' ? Number(e.target.value) : e.target.value)} placeholder={t(placeholder)} />}</label>;
+    : <input aria-label={t(label)} type={controlledDraft ? 'text' : type} inputMode={controlledDraft ? 'numeric' : type === 'tel' ? 'tel' : undefined}
+      min={min} max={max} step={type === 'integer' ? 1 : undefined} value={controlledDraft ? draft : value ?? ''}
+      aria-invalid={invalid || undefined} onChange={change} onBlur={() => { if (type === 'clock' && completeClock(draft)) setDraft(completeClock(draft)); }}
+      placeholder={t(placeholder || (type === 'clock' ? '21:30' : ''))} />}
+    {help && <small className="field-hint">{t(help)}</small>}
+    {invalid && <small className="field-validation" role="status">{t(type === 'clock' ? 'Isi jam yang valid dalam format HH:mm.' : 'Isi angka bulat dalam batas yang ditampilkan.')}</small>}
+  </label>;
 }
 
 function Toggle({ label, checked, onChange }) {
@@ -160,7 +190,7 @@ export default function SlideInspector() {
       {group === 'content' && <Field label="Nama slide" value={slide.title} onChange={title => updateSlideMeta(slide.id, { title })} />}
       <InspectorGroup.Provider value={group}>
 
-      {modern && <SceneInspector controls={controls} image={image} advanced={advanced} />}
+      {modern && <SceneInspector key={slide.id} controls={controls} image={image} advanced={advanced} />}
       {!modern && CHAT_TYPES.includes(slide.type) && <>
         <Section title="Percakapan" target="chat-header">
           {slide.type === 'wa_group'
@@ -215,7 +245,7 @@ export default function SlideInspector() {
               onChange={showTypingIndicator => patch({ showTypingIndicator })} />
             {advanced && <><Field label="Jumlah chat di tombol kembali" value={c.backCount} onChange={backCount => patch({ backCount })}
               placeholder="Kosongkan untuk menyembunyikan" />
-              <Field label="Pesan belum dibaca" type="number" min={0} value={c.unreadCount || 0}
+               <Field label="Pesan belum dibaca" type="integer" min={0} value={c.unreadCount || 0}
                 onChange={unreadCount => patch({ unreadCount: Math.max(0, unreadCount) })} />
               <Field label="Label hari" value={c.dateLabel ?? 'HARI INI'} onChange={dateLabel => patch({ dateLabel })} /></>}
           </Section>
@@ -235,7 +265,7 @@ export default function SlideInspector() {
               <Field label={message.kind === 'image' ? 'Keterangan foto' : 'Isi pesan'} value={message.text} multiline
                 onChange={text => changeItem('messages', message.id, { text })} />}
             <div className="field-row">
-              <Field label="Waktu" value={message.time} onChange={time => changeItem('messages', message.id, { time })} />
+               <Field label="Waktu (HH:mm)" type="clock" value={message.time} onChange={time => changeItem('messages', message.id, { time })} />
               {slide.type.startsWith('wa_') && <Choice label="Jenis" value={message.kind || (message.isDeleted ? 'deleted' : message.isVoiceNote ? 'voice' : message.mediaUrl ? 'image' : 'text')}
                 options={[[ 'text', 'Teks' ], [ 'image', 'Foto' ], [ 'sticker', 'Stiker' ], [ 'voice', 'Voice note' ], [ 'deleted', 'Dihapus' ]]}
                 onChange={kind => changeItem('messages', message.id, { kind })} />}
@@ -359,7 +389,7 @@ export default function SlideInspector() {
         </Section>
         {advanced && <Section title="Detail story" target="story-stickers">
           <Field label="Waktu story" value={c.storyTime} onChange={storyTime => patch({ storyTime })} placeholder="14m" />
-          <Field label="Jumlah segmen" type="number" min={1} max={10} value={c.storySegments ?? 3}
+           <Field label="Jumlah segmen" type="integer" min={1} max={10} value={c.storySegments ?? 3}
             onChange={storySegments => patch({ storySegments: Math.max(1, Math.min(10, storySegments)) })} />
           <Toggle label="Stiker musik" checked={c.musicSticker?.enabled ?? !!c.musicSticker?.song}
             onChange={enabled => patchNested('musicSticker', { enabled })} />
